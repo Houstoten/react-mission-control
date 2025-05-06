@@ -7,7 +7,7 @@
 }
 
 .expose-window-active {
-  box-shadow: 0 5px 30px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
   border-radius: 8px;
   overflow: hidden;
   cursor: pointer;
@@ -15,10 +15,19 @@
   transform: scale(var(--exposed-scale, 1)) translate(var(--exposed-x, 0), var(--exposed-y, 0));
 }
 
-/* Semi-transparent overlay that appears when Exposé is active */
+/* Add a subtle hover effect for windows in expose mode */
+.expose-window-active:hover {
+  box-shadow: 0 14px 45px rgba(0, 0, 0, 0.25);
+  transform: scale(calc(var(--exposed-scale, 1) * 1.05)) translate(var(--exposed-x, 0), var(--exposed-y, 0));
+}
+
+/* Backdrop for exposé view */
 .expose-backdrop {
   opacity: 0;
   pointer-events: auto;
+  /* Safari, iOS support */
+  -webkit-backdrop-filter: blur(15px);
+  backdrop-filter: blur(15px);
 }
 
 /* Title shown only during Expose mode */
@@ -28,10 +37,10 @@
   left: 0;
   width: 100%;
   text-align: center;
-  color: white;
+  color: #333;
   font-size: 14px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
   font-weight: 500;
   padding: 5px;
   white-space: nowrap;

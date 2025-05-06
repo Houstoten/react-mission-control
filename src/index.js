@@ -10,7 +10,7 @@ const App = () => {
   return (
     <ExposeProvider 
       shortcut="ArrowUp"
-      blurAmount={8}
+      blurAmount={15}
       onActivate={() => console.log('Expose activated: ' + new Date().toISOString())}
       onDeactivate={() => console.log('Expose deactivated: ' + new Date().toISOString())}
     >

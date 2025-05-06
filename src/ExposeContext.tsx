@@ -171,8 +171,10 @@ export const ExposeProvider: React.FC<ExposeProviderProps> = ({
       backdrop.style.left = "0";
       backdrop.style.width = "100vw";
       backdrop.style.height = "100vh";
-      backdrop.style.backgroundColor = "rgba(0, 0, 0, 0.7)";
+      backdrop.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
       backdrop.style.backdropFilter = `blur(${blurAmount}px)`;
+      // Apply Safari prefix with correct TypeScript handling
+      (backdrop.style as any)["-webkit-backdrop-filter"] = `blur(${blurAmount}px)`;
       backdrop.style.zIndex = "9998";
       backdrop.style.transition = "opacity 0.3s ease";
 

@@ -73,17 +73,18 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
     const randomOffsetX = (Math.random() - 0.5) * 20;
     const randomOffsetY = (Math.random() - 0.5) * 20;
     
-    // Get scroll position
-    const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
-    const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+    // Calculate center position for this grid cell in the visible viewport
+    // Note: We don't add scroll position since we want all windows in the current viewport
+    const centerX = (gridCol + 0.5) * cellWidth + randomOffsetX;
+    const centerY = (gridRow + 0.5) * cellHeight + randomOffsetY;
     
-    // Calculate center position for this grid cell
-    const centerX = (gridCol + 0.5) * cellWidth + randomOffsetX + scrollX;
-    const centerY = (gridRow + 0.5) * cellHeight + randomOffsetY + scrollY;
+    // Calculate the current position relative to the viewport (already accounts for scroll)
+    const currentCenterX = rect.left + rect.width / 2;
+    const currentCenterY = rect.top + rect.height / 2;
     
-    // Calculate transform
-    const translateX = centerX - (rect.left + rect.width / 2);
-    const translateY = centerY - (rect.top + rect.height / 2);
+    // Calculate transform to move from current position to target position in viewport
+    const translateX = centerX - currentCenterX;
+    const translateY = centerY - currentCenterY;
     
     setAnimationStyles({
       transform: `translate(${translateX}px, ${translateY}px)`,
@@ -91,7 +92,7 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
       zIndex: 10000
     });
     
-  }, [isActive]);
+  }, [isActive, componentId]);
   
   return (
     <div 
