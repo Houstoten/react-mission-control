@@ -49,11 +49,21 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
     // Get viewport dimensions
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
-    
-    // Find all windows that are being exposed and create grid
+
+    // Find all windows that are being exposed
     const allWindows = document.querySelectorAll('.expose-window');
     const count = allWindows.length;
-    const columns = Math.ceil(Math.sqrt(count));
+    
+    // Collect all window dimensions for better layout calculation
+    const windowRects = Array.from(allWindows).map(win => 
+      (win as HTMLElement).getBoundingClientRect()
+    );
+    
+    // Calculate optimal grid layout
+    const aspectRatio = viewportWidth / viewportHeight;
+    const columnsBase = Math.sqrt(count * aspectRatio);
+    const columns = Math.ceil(columnsBase);
+    const rows = Math.ceil(count / columns);
     
     // Get this element's index
     const index = Array.from(allWindows).indexOf(element);
@@ -62,23 +72,35 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
     const gridCol = index % columns;
     const gridRow = Math.floor(index / columns);
     
-    // Calculate target scale
-    const targetScale = Math.max(0.3, 1 - (count * 0.05));
+    // Calculate cell dimensions with padding between cells
+    const padding = Math.min(viewportWidth, viewportHeight) * 0.05; // 5% of viewport
+    const cellWidth = (viewportWidth - (padding * (columns + 1))) / columns;
+    const cellHeight = (viewportHeight - (padding * (rows + 1))) / rows;
     
-    // Calculate grid cell dimensions
-    const cellWidth = viewportWidth / columns;
-    const cellHeight = viewportHeight / Math.ceil(count / columns);
+    // Determine scaling factor based on component size and available space
+    const isSmall = rect.width < 200 || rect.height < 150;
+    const isVeryLarge = rect.width > viewportWidth * 0.6 || rect.height > viewportHeight * 0.6;
     
-    // Add subtle randomness for natural feel
-    const randomOffsetX = (Math.random() - 0.5) * 20;
-    const randomOffsetY = (Math.random() - 0.5) * 20;
+    // Calculate max scale that would fit in cell with padding
+    const maxWidthScale = cellWidth / rect.width * 0.85; // 85% of cell width
+    const maxHeightScale = cellHeight / rect.height * 0.85; // 85% of cell height
+    let targetScale = Math.min(maxWidthScale, maxHeightScale);
+    
+    // Simple adjustment for very small components
+    if (isSmall && targetScale < 0.7) {
+      targetScale = Math.max(targetScale, 0.7); // Ensure small components aren't too tiny
+    }
+    
+    // Handle very large components
+    if (isVeryLarge) {
+      targetScale = Math.min(targetScale, 0.25); // Cap for very large components
+    }
     
     // Calculate center position for this grid cell in the visible viewport
-    // Note: We don't add scroll position since we want all windows in the current viewport
-    const centerX = (gridCol + 0.5) * cellWidth + randomOffsetX;
-    const centerY = (gridRow + 0.5) * cellHeight + randomOffsetY;
+    const centerX = padding + (gridCol * (cellWidth + padding)) + (cellWidth / 2);
+    const centerY = padding + (gridRow * (cellHeight + padding)) + (cellHeight / 2);
     
-    // Calculate the current position relative to the viewport (already accounts for scroll)
+    // Calculate the current position relative to the viewport
     const currentCenterX = rect.left + rect.width / 2;
     const currentCenterY = rect.top + rect.height / 2;
     
@@ -86,9 +108,19 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
     const translateX = centerX - currentCenterX;
     const translateY = centerY - currentCenterY;
     
+    // Store final values
+    const finalTranslateX = Math.round(translateX);
+    const finalTranslateY = Math.round(translateY);
+    const finalScale = parseFloat(targetScale.toFixed(3));
+    
+    // Debug log for problematic scaling
+    if (targetScale < 0.2 || targetScale > 2) {
+      console.log(`Unusual scale for ${componentId.current}: ${targetScale}`);
+    }
+    
     setAnimationStyles({
-      transform: `translate(${translateX}px, ${translateY}px)`,
-      scale: targetScale,
+      transform: `translate(${finalTranslateX}px, ${finalTranslateY}px)`,
+      scale: finalScale,
       zIndex: 10000
     });
     
@@ -104,11 +136,13 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
         transformOrigin: 'center center',
         willChange: isActive ? 'transform, opacity' : 'auto',
         zIndex: animationStyles && isActive ? animationStyles.zIndex : 'auto',
+        // Direct style application for maximum compatibility
         transform: animationStyles && isActive 
-          ? `${animationStyles.transform} scale(${animationStyles.scale})` 
-          : 'translate(0, 0) scale(1)'
+          ? `translate(${animationStyles.transform.match(/translate\((.*?)px,/)?.[1] || 0}px, ${animationStyles.transform.match(/px,\s*(.*?)px\)/)?.[1] || 0}px) scale(${animationStyles?.scale || 1})`
+          : 'none'
       }}
       data-expose-id={componentId.current}
+      data-scale={animationStyles?.scale || 1}
     >
       {title && isActive && (
         <div className="expose-window-title">
