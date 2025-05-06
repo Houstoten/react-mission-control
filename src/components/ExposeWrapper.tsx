@@ -39,6 +39,50 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
     };
   }, [registerWindow, unregisterWindow]);
   
+  // Reference for the border overlay
+  const borderRef = useRef<HTMLDivElement | null>(null);
+
+  // Handle hover state for border element
+  useEffect(() => {
+    if (!isActive) return;
+    
+    // Create border overlay element if it doesn't exist
+    if (!borderRef.current) {
+      const borderElem = document.createElement('div');
+      borderElem.className = 'expose-window-border-overlay';
+      document.body.appendChild(borderElem);
+      borderRef.current = borderElem;
+      
+      // Add handlers for hover
+      const handleMouseEnter = () => {
+        if (borderRef.current) borderRef.current.classList.add('hover');
+      };
+      
+      const handleMouseLeave = () => {
+        if (borderRef.current) borderRef.current.classList.remove('hover');
+      };
+      
+      if (wrapperRef.current) {
+        wrapperRef.current.addEventListener('mouseenter', handleMouseEnter);
+        wrapperRef.current.addEventListener('mouseleave', handleMouseLeave);
+      }
+    }
+    
+    return () => {
+      // Clean up
+      if (borderRef.current) {
+        document.body.removeChild(borderRef.current);
+        borderRef.current = null;
+      }
+      
+      if (wrapperRef.current) {
+        // Remove event listeners
+        wrapperRef.current.removeEventListener('mouseenter', () => {});
+        wrapperRef.current.removeEventListener('mouseleave', () => {});
+      }
+    };
+  }, [isActive]);
+  
   // Calculate and store animation properties
   useEffect(() => {
     if (!wrapperRef.current || !isActive) return;
@@ -53,11 +97,6 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
     // Find all windows that are being exposed
     const allWindows = document.querySelectorAll('.expose-window');
     const count = allWindows.length;
-    
-    // Collect all window dimensions for better layout calculation
-    const windowRects = Array.from(allWindows).map(win => 
-      (win as HTMLElement).getBoundingClientRect()
-    );
     
     // Calculate optimal grid layout
     const aspectRatio = viewportWidth / viewportHeight;
@@ -113,17 +152,28 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
     const finalTranslateY = Math.round(translateY);
     const finalScale = parseFloat(targetScale.toFixed(3));
     
-    // Debug log for problematic scaling
-    if (targetScale < 0.2 || targetScale > 2) {
-      console.log(`Unusual scale for ${componentId.current}: ${targetScale}`);
-    }
-    
     setAnimationStyles({
       transform: `translate(${finalTranslateX}px, ${finalTranslateY}px)`,
       scale: finalScale,
       zIndex: 10000
     });
     
+    // Update border overlay position to match the visual (transformed) position of the component
+    if (borderRef.current && isActive) {
+      // Scale width and height based on the scale factor
+      const visualWidth = rect.width * finalScale;
+      const visualHeight = rect.height * finalScale;
+      
+      // Calculate visual center position after transform
+      const visualCenterX = currentCenterX + finalTranslateX;
+      const visualCenterY = currentCenterY + finalTranslateY;
+      
+      // Position border overlay around the visual center, accounting for scale
+      borderRef.current.style.width = `${visualWidth}px`;
+      borderRef.current.style.height = `${visualHeight}px`;
+      borderRef.current.style.left = `${visualCenterX - visualWidth/2}px`;
+      borderRef.current.style.top = `${visualCenterY - visualHeight/2}px`;
+    }
   }, [isActive, componentId]);
   
   return (
@@ -144,6 +194,7 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
       data-expose-id={componentId.current}
       data-scale={animationStyles?.scale || 1}
     >
+      
       {title && isActive && (
         <div className="expose-window-title">
           {title}
