@@ -14,6 +14,7 @@ interface ExposeContextType {
   registerWindow: (id: string, ref: React.RefObject<HTMLDivElement>) => void;
   unregisterWindow: (id: string) => void;
   windows: Map<string, React.RefObject<HTMLDivElement>>;
+  borderWidth: number; // Global border width based on screen size
 }
 
 interface ExposeProviderProps {
@@ -31,6 +32,7 @@ const ExposeContext = createContext<ExposeContextType>({
   registerWindow: () => {},
   unregisterWindow: () => {},
   windows: new Map(),
+  borderWidth: 3, // Default border width
 });
 
 export const useExpose = () => useContext(ExposeContext);
@@ -46,6 +48,27 @@ export const ExposeProvider: React.FC<ExposeProviderProps> = ({
   const [windows, setWindows] = useState<
     Map<string, React.RefObject<HTMLDivElement>>
   >(new Map());
+  
+  // Calculate global border width based on screen size
+  const [borderWidth, setBorderWidth] = useState(3); // Default border width
+  
+  // Update border width based on screen size when activated
+  useEffect(() => {
+    if (isActive) {
+      const smallScreen = window.innerWidth < 768;
+      const mediumScreen = window.innerWidth >= 768 && window.innerWidth < 1200;
+      const largeScreen = window.innerWidth >= 1200;
+      
+      // Set border width based on screen size
+      if (smallScreen) {
+        setBorderWidth(4); // Thicker borders on small screens
+      } else if (mediumScreen) {
+        setBorderWidth(3); // Medium borders on medium screens
+      } else if (largeScreen) {
+        setBorderWidth(2.5); // Thinner borders on large screens
+      }
+    }
+  }, [isActive]);
 
   const activate = useCallback(() => {
     setIsActive(true);
@@ -228,6 +251,7 @@ export const ExposeProvider: React.FC<ExposeProviderProps> = ({
         registerWindow,
         unregisterWindow,
         windows,
+        borderWidth,
       }}
     >
       {children}

@@ -21,7 +21,7 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
   // Generate a unique ID if none provided
   const componentId = useRef(propId || createUniqueId());
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const { isActive, registerWindow, unregisterWindow } = useExpose();
+  const { isActive, registerWindow, unregisterWindow, borderWidth } = useExpose();
   
   // Store calculated transform and scale for this window
   const [animationStyles, setAnimationStyles] = useState<{
@@ -168,11 +168,41 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
       const visualCenterX = currentCenterX + finalTranslateX;
       const visualCenterY = currentCenterY + finalTranslateY;
       
-      // Position border overlay around the visual center, accounting for scale
-      borderRef.current.style.width = `${visualWidth}px`;
-      borderRef.current.style.height = `${visualHeight}px`;
-      borderRef.current.style.left = `${visualCenterX - visualWidth/2}px`;
-      borderRef.current.style.top = `${visualCenterY - visualHeight/2}px`;
+      // Use the global border width from context - consistent across all components
+      
+      // Adjust the offset range for different component sizes
+      // Small components get more space, large components get less
+      const minOffset = 4; // Minimum offset in pixels
+      const maxOffset = 12; // Maximum offset in pixels
+      
+      // Calculate a more generous border offset based on the component's scale
+      // This creates more breathing room between the component and its border
+      const borderOffset = Math.max(minOffset, Math.min(maxOffset, 14 * (1 - finalScale)));
+      
+      // Make the component slightly smaller (97%) for better visual balance
+      const scaledVisualWidth = visualWidth * 0.97;
+      const scaledVisualHeight = visualHeight * 0.97;
+      
+      // Create a container that's larger than the component by the offset amount
+      const containerWidth = scaledVisualWidth + (borderOffset * 2);
+      const containerHeight = scaledVisualHeight + (borderOffset * 2);
+      
+      // Calculate positions based on the transformed component's actual center
+      // Instead of trying to calculate offsets, use the component's center
+      // and position the border relative to that
+      
+      // Reset any transforms on the border to ensure clean positioning 
+      borderRef.current.style.transform = 'none';
+      
+      // Set dimensions first to ensure the border has the correct size
+      borderRef.current.style.width = `${containerWidth}px`;
+      borderRef.current.style.height = `${containerHeight}px`;
+      
+      // Apply positioning with more correction on left/top to fix asymmetry
+      // +2px on left and top creates better visual balance
+      borderRef.current.style.left = `${Math.round(visualCenterX - containerWidth/2) + 2}px`;
+      borderRef.current.style.top = `${Math.round(visualCenterY - containerHeight/2) + 2}px`;
+      borderRef.current.style.borderWidth = `${borderWidth}px`;
     }
   }, [isActive, componentId]);
   

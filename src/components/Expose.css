@@ -20,20 +20,22 @@
 /* Border overlay that displays on hover */
 .expose-window-border-overlay {
     position: fixed; /* Use fixed position to avoid inheriting transforms */
-    /* Size and position are set dynamically via JavaScript */
-    border: 3px solid transparent;
-    border-radius: 8px;
+    /* Size, position and border-width are set dynamically via JavaScript */
+    border: solid transparent; /* Width is set dynamically */
+    border-radius: 10px; /* Slightly larger radius to ensure it surrounds the content */
     pointer-events: none; /* Let clicks pass through */
     z-index: 10002; /* Above everything else */
     transition: border-color 0.2s ease, box-shadow 0.3s ease;
-    will-change: border-color;
-    box-sizing: content-box; /* Ensure border doesn't affect dimensions */
+    will-change: border-color, transform, top, left;
+    box-sizing: border-box !important; /* Force border-box to ensure accurate sizing */
+    margin: 0 !important; /* Remove any margins */
+    padding: 0 !important; /* Remove any padding */
 }
 
 /* When hover class is added, show the border */
 .expose-window-border-overlay.hover {
     border-color: rgba(64, 156, 255, 0.85); /* Light blue border */
-    box-shadow: 0 0 0 2px rgba(64, 156, 255, 0.3); /* Subtle glow */
+    box-shadow: 0 0 8px rgba(64, 156, 255, 0.5); /* Enhanced glow for better visibility */
 }
 
 /* Backdrop for exposé view */
