@@ -1,0 +1,41 @@
+.expose-window {
+  position: relative;
+  box-sizing: border-box;
+  transform-origin: center center;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
+              box-shadow 0.4s ease;
+}
+
+.expose-window-active {
+  box-shadow: 0 5px 30px rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  /* This preserves the element's space in the layout */
+  transform: scale(var(--exposed-scale, 1)) translate(var(--exposed-x, 0), var(--exposed-y, 0));
+}
+
+/* Semi-transparent overlay that appears when Exposé is active */
+.expose-backdrop {
+  opacity: 0;
+  pointer-events: auto;
+}
+
+/* Title shown only during Expose mode */
+.expose-window-title {
+  position: absolute;
+  bottom: -30px;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  color: white;
+  font-size: 14px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  font-weight: 500;
+  padding: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  z-index: 10001;
+}

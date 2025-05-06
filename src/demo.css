@@ -1,0 +1,378 @@
+/* Base app styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-color: #f5f5f7; /* Apple-like background */
+  line-height: 1.5;
+  color: #333;
+}
+
+.app {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.header h1 {
+  font-size: 2.5rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+  background: linear-gradient(90deg, #0071e3, #00c2ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.instructions {
+  background-color: white;
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 30px;
+}
+
+kbd {
+  display: inline-block;
+  padding: 3px 5px;
+  font: 11px "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  line-height: 10px;
+  color: #444;
+  vertical-align: middle;
+  background-color: #fafbfc;
+  border: 1px solid #d1d5da;
+  border-radius: 3px;
+  box-shadow: inset 0 -1px 0 #d1d5da;
+}
+
+/* Window grid layout */
+.window-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  grid-template-rows: auto;
+  grid-auto-rows: minmax(250px, auto);
+  gap: 20px;
+}
+
+/* Base window styles */
+.window-content {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  padding: 20px;
+  height: 100%;
+}
+
+.window-content h2 {
+  font-size: 1.2rem;
+  margin-bottom: 15px;
+  color: #333;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+/* Dashboard window styles */
+.dashboard-window {
+  grid-column: span 2;
+}
+
+.analytics .chart-container {
+  height: 180px;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.analytics .chart {
+  display: flex;
+  align-items: flex-end;
+  height: 150px;
+  gap: 10px;
+}
+
+.analytics .bar {
+  flex-grow: 1;
+  background: linear-gradient(to top, #0071e3, #00c2ff);
+  border-radius: 4px 4px 0 0;
+}
+
+.analytics .chart-label {
+  text-align: center;
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 5px;
+}
+
+.analytics .stats-grid {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+}
+
+.analytics .stat {
+  text-align: center;
+  padding: 10px 20px;
+  border-radius: 8px;
+  background-color: #f5f5f7;
+}
+
+.analytics .stat-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #0071e3;
+}
+
+.analytics .stat-label {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+/* Users window styles */
+.users .user-list {
+  margin-bottom: 15px;
+}
+
+.users .user {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.users .user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: #ddd;
+  margin-right: 10px;
+}
+
+.users .user-name {
+  font-weight: 500;
+}
+
+.users .user-email {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.users .user-stats {
+  margin-top: 20px;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* Editor window styles */
+.editor-window {
+  grid-column: span 2;
+}
+
+.editor .toolbar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.editor .tool-button {
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: #f5f5f7;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.editor .editor-textarea {
+  width: 100%;
+  height: calc(100% - 60px);
+  border: 1px solid #eee;
+  border-radius: 4px;
+  padding: 10px;
+  resize: none;
+  font-family: monospace;
+  font-size: 0.9rem;
+}
+
+/* Calendar window styles */
+.calendar-window {
+  grid-row: span 2;
+}
+
+.calendar .calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.calendar .month {
+  font-weight: 500;
+  font-size: 1.1rem;
+}
+
+.calendar .calendar-nav {
+  display: flex;
+  gap: 5px;
+}
+
+.calendar .nav-button {
+  background: none;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  padding: 3px 8px;
+  cursor: pointer;
+}
+
+.calendar .calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+}
+
+.calendar .calendar-day {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  border-radius: 4px;
+}
+
+.calendar .calendar-day.header {
+  font-weight: 500;
+  color: #666;
+}
+
+.calendar .calendar-day.today {
+  background-color: #0071e3;
+  color: white;
+}
+
+.calendar .calendar-day.has-event::after {
+  content: '•';
+  color: #0071e3;
+  position: relative;
+  top: 8px;
+  left: -12px;
+}
+
+/* Settings window styles */
+.settings .settings-group {
+  margin-bottom: 20px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  padding: 15px;
+}
+
+.settings .setting {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.settings .setting:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.settings .toggle {
+  width: 40px;
+  height: 24px;
+  background-color: #eee;
+  border-radius: 12px;
+  position: relative;
+}
+
+.settings .toggle.active::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: #0071e3;
+  top: 2px;
+  right: 2px;
+}
+
+.settings .toggle::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: white;
+  top: 2px;
+  left: 2px;
+  transition: all 0.2s;
+}
+
+.settings .setting-select {
+  padding: 5px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
+
+/* Media window styles */
+.media .media-toolbar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.media .media-button {
+  padding: 5px 10px;
+  background: #f5f5f7;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.media .media-search {
+  flex-grow: 1;
+  text-align: right;
+}
+
+.media .media-search input {
+  padding: 5px 10px;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  width: 100%;
+  max-width: 200px;
+}
+
+.media .media-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.media .media-item {
+  padding-top: 100%; /* Makes it a square */
+  position: relative;
+  border-radius: 4px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .window-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .dashboard-window, .editor-window {
+    grid-column: span 1;
+  }
+}
