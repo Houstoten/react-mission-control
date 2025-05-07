@@ -48,7 +48,7 @@
         -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
         Cantarell, sans-serif;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8), 0 0 5px rgba(0, 0, 0, 0.5);
-    z-index: 10001; /* Ensure it's above the component content */
+    z-index: 10; /* Above the overlay but below the click handler */
     pointer-events: none; /* Prevent label from intercepting mouse events */
     background-color: rgba(0, 0, 0, 0.6); /* Dark background for better visibility */
     border-radius: 8px;
@@ -70,6 +70,20 @@
     transition:
         transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
         box-shadow 0.3s ease;
+    position: relative;
+}
+
+/* Overlay div to block click-through */
+.expose-window-active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 5;
+    cursor: pointer;
+    background-color: rgba(0, 0, 0, 0.01); /* Nearly invisible but blocks clicks */
 }
 
 /* Show label on hover */

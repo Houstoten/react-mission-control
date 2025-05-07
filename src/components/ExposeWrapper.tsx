@@ -216,6 +216,33 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
       <div
         ref={wrapperRef}
         className={`expose-window ${isActive ? "expose-window-active" : ""} ${className}`}
+        onClick={
+          isActive
+            ? (e) => {
+                e.stopPropagation();
+                // Get the element's original position and scroll to it
+                if (wrapperRef.current) {
+                  // Deactivate expose mode if clicked
+                  if (exposeObj.setActive) {
+                    exposeObj.setActive(false);
+                  }
+
+                  // Wait for the transition to complete before scrolling
+                  setTimeout(() => {
+                    const rect = wrapperRef.current?.getBoundingClientRect();
+                    if (rect) {
+                      // Calculate position relative to the document
+                      const scrollY = window.scrollY + rect.top - 50; // 50px top margin
+                      window.scrollTo({
+                        top: scrollY,
+                        behavior: "smooth",
+                      });
+                    }
+                  }, 250);
+                }
+              }
+            : undefined
+        }
         style={{
           ...style,
           transition:
@@ -233,6 +260,8 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
           boxShadow: isActive ? undefined : "none",
           width: "100%",
           height: "100%",
+          // We rely on the ::before overlay to block pointer events to children
+          pointerEvents: "auto",
         }}
         data-expose-id={componentId.current}
         data-scale={animationStyles?.scale || 1}

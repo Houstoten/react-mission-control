@@ -15,6 +15,7 @@ interface ExposeContextType {
   unregisterWindow: (id: string) => void;
   windows: Map<string, React.RefObject<HTMLDivElement>>;
   borderWidth: number; // Global border width based on screen size
+  setActive?: (active: boolean) => void; // Optional method to set active state directly
 }
 
 interface ExposeProviderProps {
@@ -252,6 +253,7 @@ export const ExposeProvider: React.FC<ExposeProviderProps> = ({
         unregisterWindow,
         windows,
         borderWidth,
+        setActive: setIsActive, // Expose the setState function
       }}
     >
       {children}
