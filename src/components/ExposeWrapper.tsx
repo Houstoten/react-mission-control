@@ -31,6 +31,9 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
     zIndex: number;
   } | null>(null);
 
+  // Get highlighted component state from context
+  const { highlightedComponent, setHighlightedComponent } = exposeObj;
+
   // Register/unregister this window with the Expose context
   useEffect(() => {
     registerWindow(componentId.current, wrapperRef);
@@ -83,6 +86,21 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
       }
     };
   }, [isActive]);
+
+  // Handle scroll events to detect when scroll has ended
+  useEffect(() => {
+    const isThisHighlighted = highlightedComponent === componentId.current;
+
+    if (isThisHighlighted) {
+      const maxHighlightTimeout = setTimeout(() => {
+        setHighlightedComponent(null);
+      }, 500); // Maximum highlight time
+
+      return () => {
+        clearTimeout(maxHighlightTimeout);
+      };
+    }
+  }, [highlightedComponent, componentId, setHighlightedComponent]);
 
   // Calculate and store animation properties
   useEffect(() => {
@@ -210,12 +228,12 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
       borderRef.current.style.borderWidth = `${borderWidth}px`;
     }
   }, [isActive, componentId]);
-
+  console.log(highlightedComponent, componentId.current);
   return (
     <div className="expose-container">
       <div
         ref={wrapperRef}
-        className={`expose-window ${isActive ? "expose-window-active" : ""} ${className}`}
+        className={`expose-window ${isActive ? "expose-window-active" : ""} ${highlightedComponent === componentId.current ? "expose-window-highlighted" : ""} ${className}`}
         onClick={
           isActive
             ? (e) => {
@@ -226,6 +244,9 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
                   if (exposeObj.setActive) {
                     exposeObj.setActive(false);
                   }
+
+                  // Set this component as highlighted
+                  setHighlightedComponent(componentId.current);
 
                   // Wait for the transition to complete before scrolling
                   setTimeout(() => {
@@ -238,7 +259,7 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
                         behavior: "smooth",
                       });
                     }
-                  }, 250);
+                  }, 400); // Match the transition time (0.4s)
                 }
               }
             : undefined
@@ -246,10 +267,18 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
         style={{
           ...style,
           transition:
-            "transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease",
+            "transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease, box-shadow 0.4s ease, filter 0.4s ease",
           transformOrigin: "center center",
-          willChange: isActive ? "transform, opacity" : "auto",
-          zIndex: animationStyles && isActive ? animationStyles.zIndex : "auto",
+          willChange:
+            isActive || highlightedComponent === componentId.current
+              ? "transform, opacity, filter"
+              : "auto",
+          zIndex:
+            animationStyles && isActive
+              ? animationStyles.zIndex
+              : highlightedComponent === componentId.current
+                ? 1000
+                : "auto",
           // Direct style application for maximum compatibility
           transform:
             animationStyles && isActive
@@ -257,14 +286,24 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
               : "none",
           // Make wrapper invisible (but don't affect children) when not in expose mode
           background: isActive ? undefined : "transparent",
-          boxShadow: isActive ? undefined : "none",
+          boxShadow: isActive
+            ? undefined
+            : highlightedComponent === componentId.current
+              ? "0 0 0 4px rgba(64, 156, 255, 0.7), 0 5px 20px rgba(0, 0, 0, 0.2)"
+              : "none",
           width: "100%",
           height: "100%",
           // We rely on the ::before overlay to block pointer events to children
           pointerEvents: "auto",
+          // Apply blur to other elements when this one is highlighted - note other elements get blurred via CSS classes
+          filter:
+            highlightedComponent === componentId.current ? "none" : "blur(0px)",
         }}
         data-expose-id={componentId.current}
         data-scale={animationStyles?.scale || 1}
+        data-highlighted={
+          highlightedComponent === componentId.current ? "true" : "false"
+        }
       >
         {children}
 

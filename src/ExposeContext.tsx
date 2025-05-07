@@ -16,6 +16,8 @@ interface ExposeContextType {
   windows: Map<string, React.RefObject<HTMLDivElement>>;
   borderWidth: number; // Global border width based on screen size
   setActive?: (active: boolean) => void; // Optional method to set active state directly
+  highlightedComponent: string | null; // ID of the currently highlighted component
+  setHighlightedComponent: (id: string | null) => void; // Set the highlighted component
 }
 
 interface ExposeProviderProps {
@@ -34,6 +36,8 @@ const ExposeContext = createContext<ExposeContextType>({
   unregisterWindow: () => {},
   windows: new Map(),
   borderWidth: 3, // Default border width
+  highlightedComponent: null,
+  setHighlightedComponent: () => {},
 });
 
 export const useExpose = () => useContext(ExposeContext);
@@ -100,8 +104,9 @@ export const ExposeProvider: React.FC<ExposeProviderProps> = ({
     });
   }, []);
 
-  // State to track key hold timer
+  // State to track key hold timer and highlighted component
   const keyHoldTimerRef = useRef<number | null>(null);
+  const [highlightedComponent, setHighlightedComponent] = useState<string | null>(null);
 
   // Handle keyboard shortcut
   useEffect(() => {
@@ -254,6 +259,8 @@ export const ExposeProvider: React.FC<ExposeProviderProps> = ({
         windows,
         borderWidth,
         setActive: setIsActive, // Expose the setState function
+        highlightedComponent,
+        setHighlightedComponent, // Expose the highlighted component state
       }}
     >
       {children}
