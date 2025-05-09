@@ -80,7 +80,12 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
       // Add handlers for hover
       const handleMouseEnter = () => {
         if (borderRef.current) {
-          borderRef.current.querySelector('.expose-window-border-overlay')?.classList.add("hover");
+          // Add hover class and directly set border color
+          const borderOverlay = borderRef.current.querySelector('.expose-window-border-overlay') as HTMLElement;
+          if (borderOverlay) {
+            borderOverlay.classList.add("hover");
+            borderOverlay.style.borderColor = "rgba(64, 156, 255, 0.85)";
+          }
 
           // Show the label on hover
           const labelEl = borderRef.current.querySelector('.expose-window-label');
@@ -90,7 +95,12 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
 
       const handleMouseLeave = () => {
         if (borderRef.current) {
-          borderRef.current.querySelector('.expose-window-border-overlay')?.classList.remove("hover");
+          // Remove hover class and set transparent border
+          const borderOverlay = borderRef.current.querySelector('.expose-window-border-overlay') as HTMLElement;
+          if (borderOverlay) {
+            borderOverlay.classList.remove("hover");
+            borderOverlay.style.borderColor = "transparent";
+          }
 
           // Hide the label when not hovering
           const labelEl = borderRef.current.querySelector('.expose-window-label');
@@ -115,7 +125,12 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
         // Remove event listeners properly with named functions
         const handleMouseEnter = () => {
           if (borderRef.current) {
-            borderRef.current.querySelector('.expose-window-border-overlay')?.classList.add("hover");
+            // Add hover class and directly set border color
+            const borderOverlay = borderRef.current.querySelector('.expose-window-border-overlay') as HTMLElement;
+            if (borderOverlay) {
+              borderOverlay.classList.add("hover");
+              borderOverlay.style.borderColor = "rgba(64, 156, 255, 0.85)";
+            }
             const labelEl = borderRef.current.querySelector('.expose-window-label');
             if (labelEl) (labelEl as HTMLElement).style.opacity = '1';
           }
@@ -123,7 +138,12 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
 
         const handleMouseLeave = () => {
           if (borderRef.current) {
-            borderRef.current.querySelector('.expose-window-border-overlay')?.classList.remove("hover");
+            // Remove hover class and set transparent border
+            const borderOverlay = borderRef.current.querySelector('.expose-window-border-overlay') as HTMLElement;
+            if (borderOverlay) {
+              borderOverlay.classList.remove("hover");
+              borderOverlay.style.borderColor = "transparent";
+            }
             const labelEl = borderRef.current.querySelector('.expose-window-label');
             if (labelEl) (labelEl as HTMLElement).style.opacity = '0';
           }
@@ -265,11 +285,18 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
           borderOverlay.style.height = "100%";
           borderOverlay.style.borderWidth = `${borderWidth}px`;
           borderOverlay.style.borderStyle = "solid";
-          borderOverlay.style.borderColor = "transparent";
+          borderOverlay.style.borderColor = "transparent"; // Initial transparent border
           borderOverlay.style.borderRadius = "6px";
           borderOverlay.style.boxSizing = "border-box";
           borderOverlay.style.pointerEvents = "none";
+
+          // Explicitly set transition for border-color
           borderOverlay.style.transition = "border-color 0.2s ease";
+
+          // Make sure hover class correctly sets the border color
+          if (borderOverlay.classList.contains("hover")) {
+            borderOverlay.style.borderColor = "rgba(64, 156, 255, 0.85)";
+          }
         }
 
         // Position the label

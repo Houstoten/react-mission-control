@@ -165,7 +165,6 @@ body:has(.expose-window-highlighted) .expose-window:not(.expose-window-highlight
 /* When hover class is added, show the border */
 .expose-window-border-overlay.hover {
     border-color: rgba(64, 156, 255, 0.85); /* Light blue border */
-    box-shadow: 0 0 8px rgba(64, 156, 255, 0.5); /* Enhanced glow for better visibility */
 }
 
 /* Backdrop for exposé view */
