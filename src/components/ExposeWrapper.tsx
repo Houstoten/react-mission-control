@@ -241,6 +241,96 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
       }
     };
   }, [isActive, borderWidth]);
+  // Create label div with fixed positioning that follows the component
+  useEffect(() => {
+    // Only create label when in expose mode with a valid label
+    if (isActive && label) {
+      // Create a label element if it doesn't exist
+      let labelElem = document.getElementById(`expose-label-${componentId.current}`);
+
+      if (!labelElem) {
+        labelElem = document.createElement('div');
+        labelElem.id = `expose-label-${componentId.current}`;
+        labelElem.className = 'expose-window-label';
+        labelElem.textContent = label;
+        document.body.appendChild(labelElem);
+      }
+
+      // Update position when component position changes
+      const updateLabelPosition = () => {
+        if (!wrapperRef.current || !labelElem) return;
+
+        // Get component rect for calculations
+        const rect = wrapperRef.current.getBoundingClientRect();
+
+        // Get border overlay position if it exists
+        let centerX = rect.left + (rect.width / 2);
+        let centerY = rect.top + (rect.height / 2);
+
+        // If border overlay exists and is positioned, use its position instead
+        if (borderRef.current &&
+            borderRef.current.style.left &&
+            borderRef.current.style.top &&
+            borderRef.current.style.width &&
+            borderRef.current.style.height) {
+          const borderLeft = parseFloat(borderRef.current.style.left);
+          const borderTop = parseFloat(borderRef.current.style.top);
+          const borderWidth = parseFloat(borderRef.current.style.width);
+          const borderHeight = parseFloat(borderRef.current.style.height);
+
+          if (!isNaN(borderLeft) && !isNaN(borderTop) && !isNaN(borderWidth) && !isNaN(borderHeight)) {
+            centerX = borderLeft + (borderWidth / 2);
+            centerY = borderTop + (borderHeight / 2);
+          }
+        }
+
+        // Calculate scale for inverse scaling
+        const scale = animationStyles?.scale ? 1 / animationStyles.scale : 1;
+
+        // Position label near but not on the component
+        // (using absolute positioning with adjustments instead of transform)
+        labelElem.style.position = 'fixed';
+        labelElem.style.left = `${centerX - (labelElem.offsetWidth / 2)}px`;
+        labelElem.style.top = `${centerY - (labelElem.offsetHeight / 2)}px`;
+        labelElem.style.opacity = '0'; // Start with opacity 0, will be shown on hover
+        labelElem.style.zIndex = '20000';
+      };
+
+      // Update immediately
+      updateLabelPosition();
+
+      // Update when window resizes
+      window.addEventListener('resize', updateLabelPosition);
+
+      // Add hover handlers to the wrapper element
+      const handleMouseEnter = () => {
+        if (labelElem) labelElem.style.opacity = '1';
+      };
+
+      const handleMouseLeave = () => {
+        if (labelElem) labelElem.style.opacity = '0';
+      };
+
+      if (wrapperRef.current) {
+        wrapperRef.current.addEventListener('mouseenter', handleMouseEnter);
+        wrapperRef.current.addEventListener('mouseleave', handleMouseLeave);
+      }
+
+      return () => {
+        window.removeEventListener('resize', updateLabelPosition);
+
+        if (wrapperRef.current) {
+          wrapperRef.current.removeEventListener('mouseenter', handleMouseEnter);
+          wrapperRef.current.removeEventListener('mouseleave', handleMouseLeave);
+        }
+
+        if (labelElem && labelElem.parentNode) {
+          document.body.removeChild(labelElem);
+        }
+      };
+    }
+  }, [isActive, label, componentId, animationStyles?.scale, animationStyles?.transform, borderRef.current]);
+
   return (
     <div className="expose-container">
       <div
@@ -303,7 +393,6 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
         data-highlighted={highlightedComponent === componentId.current ? "true" : "false"}
       >
         {children}
-        {label && isActive && <div className="expose-window-label">{label}</div>}
       </div>
     </div>
   );
