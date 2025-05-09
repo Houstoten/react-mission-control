@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useLayoutEffect } from "react";
 import { useExpose } from "../ExposeContext";
 import { createUniqueId } from "../utils";
 import "./Expose.css";
@@ -23,6 +23,11 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
   const wrapperRef = useRef<HTMLDivElement>(null);
   const exposeObj = useExpose();
   const { isActive, registerWindow, unregisterWindow, borderWidth } = exposeObj;
+  
+  // For storing precomputed position values for smooth scrolling
+  const positionCache = useRef<{scrollY: number | null}>({
+    scrollY: null
+  });
 
   // Store calculated transform and scale for this window
   const [animationStyles, setAnimationStyles] = useState<{
@@ -40,6 +45,8 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
 
     return () => {
       unregisterWindow(componentId.current);
+      // Reset position cache on unmount
+      positionCache.current.scrollY = null;
     };
   }, [registerWindow, unregisterWindow]);
 
@@ -87,13 +94,27 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
     };
   }, [isActive]);
 
-  // Handle scroll events to detect when scroll has ended
-  useEffect(() => {
+  // Use useLayoutEffect for immediate visual update when component is highlighted
+  // This runs synchronously right after DOM mutations but before browser paints
+  useLayoutEffect(() => {
     const isThisHighlighted = highlightedComponent === componentId.current;
 
-    if (isThisHighlighted) {
+    if (isThisHighlighted && wrapperRef.current) {
+      // Apply visual highlight styling
+      
+      // Apply immediate visual changes to highlight element
+      wrapperRef.current.style.zIndex = '1000';
+      wrapperRef.current.style.transform = 'scale(1.02)';
+      wrapperRef.current.style.boxShadow = '0 0 0 4px rgba(64, 156, 255, 0.7), 0 5px 20px rgba(0, 0, 0, 0.2)';
+      
+      // We're now handling all scrolling within the click handler's callback
+      // Don't try to scroll here to avoid conflicts
+      
+      // Cleanup highlight after a delay
       const maxHighlightTimeout = setTimeout(() => {
         setHighlightedComponent(null);
+        // Reset position cache after highlight ends
+        positionCache.current.scrollY = null;
       }, 500); // Maximum highlight time
 
       return () => {
@@ -228,7 +249,7 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
       borderRef.current.style.borderWidth = `${borderWidth}px`;
     }
   }, [isActive, componentId]);
-  console.log(highlightedComponent, componentId.current);
+  // Removed unnecessary console log
   return (
     <div className="expose-container">
       <div
@@ -238,28 +259,79 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
           isActive
             ? (e) => {
                 e.stopPropagation();
-                // Get the element's original position and scroll to it
+                
                 if (wrapperRef.current) {
-                  // Deactivate expose mode if clicked
+                  // Store element ID before we make any changes
+                  const elementId = componentId.current;
+                
+                  // Get a direct reference to this element that won't be affected 
+                  // by React's state changes - this is critical for accurate positioning
+                  const domElement = document.querySelector(`[data-expose-id="${elementId}"]`);
+                  
+                  // Calculate element's position relative to document
+                  // Using element.offsetTop gives us document position accounting for scrolling
+                  let targetScrollY = 0;
+                  
+                  if (domElement) {
+                    // Get element coordinates in viewport
+                    const rect = domElement.getBoundingClientRect();
+                    
+                    // Use the original scroll position from Context if available
+                    // @ts-ignore - accessing property on window
+                    const originalScrollY = window.__restoreScrollY !== undefined ? 
+                      // @ts-ignore
+                      window.__restoreScrollY : window.pageYOffset;
+                    
+                    // Calculate absolute position accounting for restoration of scroll
+                    // This ensures we get coordinates relative to our target scroll position
+                    targetScrollY = originalScrollY + rect.top - 50;
+                    
+                    // Position calculation complete
+                    
+                    // Cleanup the global variable so it doesn't interfere with future calls
+                    // @ts-ignore
+                    delete window.__restoreScrollY;
+                  }
+                  
+                  // Save target position in ref
+                  positionCache.current.scrollY = targetScrollY;
+                  
+                  // Exit expose mode first
                   if (exposeObj.setActive) {
                     exposeObj.setActive(false);
                   }
-
-                  // Set this component as highlighted
-                  setHighlightedComponent(componentId.current);
-
-                  // Wait for the transition to complete before scrolling
-                  setTimeout(() => {
-                    const rect = wrapperRef.current?.getBoundingClientRect();
-                    if (rect) {
-                      // Calculate position relative to the document
-                      const scrollY = window.scrollY + rect.top - 50; // 50px top margin
-                      window.scrollTo({
-                        top: scrollY,
-                        behavior: "smooth",
-                      });
-                    }
-                  }, 400); // Match the transition time (0.4s)
+                  
+                  // We now set the component as highlighted in the callback
+                  // after the expose mode is deactivated
+                  
+                  // Store the position for use in case we need it
+                  positionCache.current.scrollY = targetScrollY;
+                  
+                  // Handle state changes and scrolling in a careful sequence
+                  if (exposeObj.setActive) {
+                    // Step 1: Deactivate expose mode first
+                    exposeObj.setActive(false);
+                    
+                    // Step 2: Highlight the component AFTER expose mode is deactivated
+                    setTimeout(() => {
+                      setHighlightedComponent(elementId);
+                      
+                      // Step 3: Handle scrolling after ALL state changes
+                      setTimeout(() => {
+                        // Get a fresh reference to the element now that state has changed
+                        const actualElement = document.querySelector(`[data-expose-id="${elementId}"]`);
+                        
+                        if (actualElement) {
+                          // Get the element's position in the document
+                          const rect = actualElement.getBoundingClientRect();
+                          const actualY = window.pageYOffset + rect.top - 50;
+                          
+                          // Scroll directly to the position - instant response
+                          window.scrollTo(0, actualY);
+                        }
+                      }, 10); // Small delay for state updates
+                    }, 5); // Minimal delay between state changes
+                  }
                 }
               }
             : undefined
@@ -271,7 +343,7 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
           transformOrigin: "center center",
           willChange:
             isActive || highlightedComponent === componentId.current
-              ? "transform, opacity, filter"
+              ? "transform, opacity, filter, scroll-position" 
               : "auto",
           zIndex:
             animationStyles && isActive
@@ -279,11 +351,11 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
               : highlightedComponent === componentId.current
                 ? 1000
                 : "auto",
-          // Direct style application for maximum compatibility
+          // Performance optimized transform with will-change property
           transform:
             animationStyles && isActive
               ? `translate(${animationStyles.transform.match(/translate\((.*?)px,/)?.[1] || 0}px, ${animationStyles.transform.match(/px,\s*(.*?)px\)/)?.[1] || 0}px) scale(${animationStyles?.scale || 1})`
-              : "none",
+              : (highlightedComponent === componentId.current ? "scale(1.02)" : "none"),
           // Make wrapper invisible (but don't affect children) when not in expose mode
           background: isActive ? undefined : "transparent",
           boxShadow: isActive
