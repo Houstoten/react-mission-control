@@ -1,7 +1,8 @@
 import React, { useRef, useEffect, useState, useLayoutEffect } from "react";
 import { useExpose } from "../ExposeContext";
 import { createUniqueId } from "../utils";
-import "./Expose.css";
+import { BorderOverlay } from "./ui/BorderOverlay";
+import "../styles/exposeWrapper.css";
 
 interface ExposeWrapperProps {
   children: React.ReactNode;
@@ -21,15 +22,21 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
   // Generate a unique ID if none provided
   const componentId = useRef(propId || createUniqueId());
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const exposeObj = useExpose();
   const { isActive, registerWindow, unregisterWindow, borderWidth } = exposeObj;
   const rafRef = useRef<number | null>(null);
 
   // Store calculated transform and scale for this window
   const [animationStyles, setAnimationStyles] = useState<{
-    transform: string;
+    translateX: number;
+    translateY: number;
     scale: number;
     zIndex: number;
+    borderLeft: number;
+    borderTop: number;
+    borderWidth: number;
+    borderHeight: number;
   } | null>(null);
 
   // Get highlighted component state from context
@@ -80,12 +87,7 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
       // Add handlers for hover
       const handleMouseEnter = () => {
         if (borderRef.current) {
-          // Add hover class and directly set border color
-          const borderOverlay = borderRef.current.querySelector('.expose-window-border-overlay') as HTMLElement;
-          if (borderOverlay) {
-            borderOverlay.classList.add("hover");
-            borderOverlay.style.borderColor = "rgba(64, 156, 255, 0.85)";
-          }
+          borderRef.current.querySelector('.expose-window-border-overlay')?.classList.add("hover");
 
           // Show the label on hover
           const labelEl = borderRef.current.querySelector('.expose-window-label');
@@ -95,12 +97,7 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
 
       const handleMouseLeave = () => {
         if (borderRef.current) {
-          // Remove hover class and set transparent border
-          const borderOverlay = borderRef.current.querySelector('.expose-window-border-overlay') as HTMLElement;
-          if (borderOverlay) {
-            borderOverlay.classList.remove("hover");
-            borderOverlay.style.borderColor = "transparent";
-          }
+          borderRef.current.querySelector('.expose-window-border-overlay')?.classList.remove("hover");
 
           // Hide the label when not hovering
           const labelEl = borderRef.current.querySelector('.expose-window-label');
@@ -125,12 +122,7 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
         // Remove event listeners properly with named functions
         const handleMouseEnter = () => {
           if (borderRef.current) {
-            // Add hover class and directly set border color
-            const borderOverlay = borderRef.current.querySelector('.expose-window-border-overlay') as HTMLElement;
-            if (borderOverlay) {
-              borderOverlay.classList.add("hover");
-              borderOverlay.style.borderColor = "rgba(64, 156, 255, 0.85)";
-            }
+            borderRef.current.querySelector('.expose-window-border-overlay')?.classList.add("hover");
             const labelEl = borderRef.current.querySelector('.expose-window-label');
             if (labelEl) (labelEl as HTMLElement).style.opacity = '1';
           }
@@ -138,12 +130,7 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
 
         const handleMouseLeave = () => {
           if (borderRef.current) {
-            // Remove hover class and set transparent border
-            const borderOverlay = borderRef.current.querySelector('.expose-window-border-overlay') as HTMLElement;
-            if (borderOverlay) {
-              borderOverlay.classList.remove("hover");
-              borderOverlay.style.borderColor = "transparent";
-            }
+            borderRef.current.querySelector('.expose-window-border-overlay')?.classList.remove("hover");
             const labelEl = borderRef.current.querySelector('.expose-window-label');
             if (labelEl) (labelEl as HTMLElement).style.opacity = '0';
           }
@@ -183,7 +170,7 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
 
     // Use requestAnimationFrame for smoother animations
     const updatePosition = () => {
-      if (!wrapperRef.current) return;
+      if (!wrapperRef.current || !containerRef.current) return;
 
       const element = wrapperRef.current;
       const rect = element.getBoundingClientRect();
@@ -241,28 +228,21 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
       const finalTranslateY = Math.round(translateY);
       const finalScale = parseFloat(targetScale.toFixed(3));
 
-      setAnimationStyles({
-        transform: `translate(${finalTranslateX}px, ${finalTranslateY}px)`,
-        scale: finalScale,
-        zIndex: 10000,
-      });
+      // Calculate border dimensions
+      const visualWidth = rect.width * finalScale;
+      const visualHeight = rect.height * finalScale;
+      const visualCenterX = currentCenterX + finalTranslateX;
+      const visualCenterY = currentCenterY + finalTranslateY;
 
-      // Update border container and its children
-      if (borderRef.current) {
-        const visualWidth = rect.width * finalScale;
-        const visualHeight = rect.height * finalScale;
-        const visualCenterX = currentCenterX + finalTranslateX;
-        const visualCenterY = currentCenterY + finalTranslateY;
+      const borderOffset = Math.max(
+        4, // min offset
+        Math.min(12, 14 * (1 - finalScale)) // max offset
+      );
 
-        const borderOffset = Math.max(
-          4, // min offset
-          Math.min(12, 14 * (1 - finalScale)) // max offset
-        );
-
-        const scaledVisualWidth = visualWidth * 0.97;
-        const scaledVisualHeight = visualHeight * 0.97;
-        const containerWidth = scaledVisualWidth + borderOffset * 2;
-        const containerHeight = scaledVisualHeight + borderOffset * 2;
+      const scaledVisualWidth = visualWidth * 0.97;
+      const scaledVisualHeight = visualHeight * 0.97;
+      const containerWidth = scaledVisualWidth + borderOffset * 2;
+      const containerHeight = scaledVisualHeight + borderOffset * 2;
 
         // Position the container
         borderRef.current.style.transform = "none";
@@ -285,18 +265,11 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
           borderOverlay.style.height = "100%";
           borderOverlay.style.borderWidth = `${borderWidth}px`;
           borderOverlay.style.borderStyle = "solid";
-          borderOverlay.style.borderColor = "transparent"; // Initial transparent border
+          borderOverlay.style.borderColor = "transparent";
           borderOverlay.style.borderRadius = "6px";
           borderOverlay.style.boxSizing = "border-box";
           borderOverlay.style.pointerEvents = "none";
-
-          // Explicitly set transition for border-color
           borderOverlay.style.transition = "border-color 0.2s ease";
-
-          // Make sure hover class correctly sets the border color
-          if (borderOverlay.classList.contains("hover")) {
-            borderOverlay.style.borderColor = "rgba(64, 156, 255, 0.85)";
-          }
         }
 
         // Position the label
@@ -347,81 +320,71 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
         rafRef.current = null;
       }
     };
-  }, [isActive, borderWidth]);
-  // Handle label text updates
-  useEffect(() => {
-    // Only update label when in expose mode with a valid label
-    if (isActive && label && borderRef.current) {
-      // Get label element that's already created as a sibling to border
-      const labelElem = borderRef.current.querySelector('.expose-window-label');
+  }, [isActive]);
 
-      if (labelElem) {
-        // Update label text
-        labelElem.textContent = label;
-      }
+  // Handle component click in Exposé mode
+  const handleExposeClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!wrapperRef.current) return;
+
+    // Deactivate expose mode
+    if (exposeObj.setActive) {
+      exposeObj.setActive(false);
     }
-  }, [isActive, label]);
+
+    // Set this component as highlighted
+    setHighlightedComponent(componentId.current);
+
+    // Store the original scroll position for when body position is restored
+    const scrollPosition = wrapperRef.current.getBoundingClientRect().top +
+                          window.pageYOffset -
+                          50; // 50px offset from the top
+
+    // Store this in sessionStorage to retrieve after Exposé is deactivated
+    sessionStorage.setItem('exposeScrollTarget', scrollPosition.toString());
+
+    // Use requestAnimationFrame for smoother scrolling after transition
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        if (!wrapperRef.current) return;
+        // The actual scrolling will happen in ExposeContext when it restores body position
+      }, 200); // Match transition time
+    });
+  };
+
+  const isHighlighted = highlightedComponent === componentId.current;
 
   return (
-    <div className="expose-container">
+    <div ref={containerRef} className="expose-container">
+      {/* Conditionally render the BorderOverlay component */}
+      {isActive && animationStyles && (
+        <BorderOverlay
+          targetRef={wrapperRef}
+          isActive={isActive}
+          scale={animationStyles.scale}
+          borderWidth={borderWidth}
+          label={label}
+        />
+      )}
+      
       <div
         ref={wrapperRef}
-        className={`expose-window ${isActive ? "expose-window-active" : ""} ${highlightedComponent === componentId.current ? "expose-window-highlighted" : ""} ${className}`}
-        onClick={
-          isActive
-            ? (e) => {
-                e.stopPropagation();
-                if (wrapperRef.current) {
-                  // Deactivate expose mode
-                  if (exposeObj.setActive) {
-                    exposeObj.setActive(false);
-                  }
-
-                  // Set this component as highlighted
-                  setHighlightedComponent(componentId.current);
-
-                  // Use requestAnimationFrame for smoother scrolling after transition
-                  requestAnimationFrame(() => {
-                    setTimeout(() => {
-                      if (!wrapperRef.current) return;
-                      const rect = wrapperRef.current.getBoundingClientRect();
-                      // Calculate position relative to the document with a small margin
-                      const scrollY = window.scrollY + rect.top - 50;
-                      window.scrollTo({
-                        top: scrollY,
-                        behavior: "smooth",
-                      });
-                    }, 200); // Match transition time
-                  });
-                }
-              }
-            : undefined
-        }
-        style={{
-          ...style,
-          transition: "transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease",
-          transformOrigin: "center center",
-          willChange: (isActive || highlightedComponent === componentId.current) ? "transform, opacity, filter" : "auto",
-          zIndex: animationStyles && isActive
-            ? animationStyles.zIndex
-            : highlightedComponent === componentId.current ? 1000 : "auto",
-          transform: animationStyles && isActive
-            ? `translate(${animationStyles.transform.match(/translate\((.*?)px,/)?.[1] || 0}px, ${animationStyles.transform.match(/px,\s*(.*?)px\)/)?.[1] || 0}px) scale(${animationStyles?.scale || 1})`
-            : "none",
-          background: isActive ? undefined : "transparent",
-          boxShadow: isActive
-            ? undefined
-            : highlightedComponent === componentId.current
-              ? "0 0 0 4px rgba(64, 156, 255, 0.7), 0 5px 20px rgba(0, 0, 0, 0.2)"
-              : "none",
-          width: "100%",
-          height: "100%",
-          pointerEvents: "auto",
-          filter: highlightedComponent === componentId.current ? "none" : "blur(0px)",
-        }}
+        className={`expose-window ${isActive ? "expose-window-active" : ""} ${isHighlighted ? "expose-window-highlighted" : ""} ${className}`}
+        onClick={isActive ? handleExposeClick : undefined}
         data-expose-id={componentId.current}
         data-scale={animationStyles?.scale || 1}
-        data-highlighted={highlightedComponent === componentId.current ? "true" : "false"}
+        data-highlighted={isHighlighted ? "true" : "false"}
+        style={{
+          ...style,
+          willChange: (isActive || isHighlighted) ? "transform, opacity, filter" : "auto",
+          zIndex: isHighlighted ? 1000 : "auto",
+          // Only add inline styles for non-active mode or highlighted mode
+          // Active mode transform is handled by CSS variables
+          ...((!isActive || isHighlighted) && {
+            transform: isHighlighted ? 'scale(1.02)' : 'none',
+            boxShadow: isHighlighted ? "0 0 0 4px rgba(64, 156, 255, 0.7), 0 5px 20px rgba(0, 0, 0, 0.2)" : "none"
+          })
+        }}
       >
         {children}
       </div>

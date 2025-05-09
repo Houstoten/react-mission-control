@@ -165,16 +165,10 @@ body:has(.expose-window-highlighted) .expose-window:not(.expose-window-highlight
 /* When hover class is added, show the border */
 .expose-window-border-overlay.hover {
     border-color: rgba(64, 156, 255, 0.85); /* Light blue border */
+    box-shadow: 0 0 8px rgba(64, 156, 255, 0.5); /* Enhanced glow for better visibility */
 }
 
-/* Backdrop for exposé view */
-.expose-backdrop {
-    opacity: 0;
-    pointer-events: auto;
-    /* Safari, iOS support */
-    -webkit-backdrop-filter: blur(15px);
-    backdrop-filter: blur(15px);
-}
+/* Backdrop has been moved to src/styles/backdrop.css */
 
 /* Title shown only during Expose mode */
 .expose-window-title {

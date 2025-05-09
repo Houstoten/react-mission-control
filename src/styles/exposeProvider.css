@@ -1,0 +1,30 @@
+/* Expose provider styles */
+.expose-provider {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  /* Structure for proper z-indexing */
+  display: flex;
+  flex-direction: column;
+  isolation: isolate; /* Create a stacking context */
+}
+
+/* Ensure content is above backdrop */
+.expose-content {
+  position: relative;
+  z-index: 1000; /* Must be higher than backdrop (999) */
+  width: 100%;
+  height: 100%;
+}
+
+/* Screen breakpoints for responsive adjustments */
+/* These values will be used to adjust border width and other properties */
+:root {
+  --expose-small-screen: 768px;
+  --expose-medium-screen: 1200px;
+  
+  /* Default border widths */
+  --expose-border-small: 4px;
+  --expose-border-medium: 3px;
+  --expose-border-large: 2.5px;
+}

@@ -3,7 +3,11 @@ import ReactDOM from 'react-dom/client';
 import { ExposeProvider } from './ExposeContext';
 import { ExposeWrapper } from './components/ExposeWrapper';
 import { ExposeTrigger } from './components/ExposeTrigger';
-import './components/Expose.css';
+// Import CSS files
+import './styles/backdrop.css';
+import './styles/exposeProvider.css';
+import './styles/exposeWrapper.css';
+import './components/Expose.css'; // Keep for backwards compatibility
 import './demo.css';
 
 const App = () => {
