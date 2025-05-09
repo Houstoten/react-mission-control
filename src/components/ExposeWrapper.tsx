@@ -259,7 +259,7 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
                         behavior: "smooth",
                       });
                     }
-                  }, 400); // Match the transition time (0.4s)
+                  }, 200); // Match the transition time (0.2s)
                 }
               }
             : undefined
@@ -267,7 +267,7 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
         style={{
           ...style,
           transition:
-            "transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease, box-shadow 0.4s ease, filter 0.4s ease",
+            "transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease",
           transformOrigin: "center center",
           willChange:
             isActive || highlightedComponent === componentId.current
