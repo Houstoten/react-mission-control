@@ -75,32 +75,36 @@ body:has(.expose-window-highlighted) .expose-window:not(.expose-window-highlight
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-/* Label displayed centered on exposed component when hovered */
+/* Label displayed below exposed component when hovered */
 .expose-window-label {
-    position: absolute; /* Will be overridden in JS with 'fixed' */
+    position: absolute;
+    top: calc(50% - 10px);
+    left: 50%;
+    transform: translateX(-50%);
     text-align: center;
     color: white;
-    font-size: 16px; /* Smaller font size */
-    font-weight: 500; /* Slightly less bold */
-    padding: 6px 12px; /* Smaller padding */
+    font-size: 14px;
+    font-weight: 500;
+    padding: 6px 12px;
     font-family:
         -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
         Cantarell, sans-serif;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); /* Reduced shadow */
-    z-index: 20; /* Higher z-index to overlay everything properly */
-    pointer-events: none; /* Prevent label from intercepting mouse events */
-    background-color: rgba(0, 0, 0, 0.7); /* Darker background for better visibility */
-    border-radius: 6px; /* Smaller border radius */
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    z-index: 20002; /* Very high z-index to ensure visibility */
+    pointer-events: none;
+    background-color: rgba(0, 0, 0, 0.75);
+    border-radius: 6px;
     backdrop-filter: blur(3px);
     -webkit-backdrop-filter: blur(3px);
     opacity: 0;
     transition: opacity 0.2s ease;
-    max-width: 300%; /* Allow labels to be much wider than components */
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    width: fit-content; /* Fit content width */
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4); /* Add shadow for better visibility */
+    width: max-content; /* Use max-content for flexible width */
+    white-space: nowrap; /* Keep text on a single line */
+    overflow: visible; /* Allow content to be fully visible */
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+    height: auto;
+    min-height: fit-content;
+    max-width: none;
 }
 
 .expose-window-active {
@@ -132,16 +136,27 @@ body:has(.expose-window-highlighted) .expose-window:not(.expose-window-highlight
     opacity: 1;
 }
 
+/* Container for border and label */
+.expose-window-border-container {
+    position: fixed;
+    pointer-events: none;
+    z-index: 10001;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+}
+
 /* Border overlay that displays on hover */
 .expose-window-border-overlay {
-    position: fixed; /* Use fixed position to avoid inheriting transforms */
-    /* Size, position and border-width are set dynamically via JavaScript */
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     border: solid transparent; /* Width is set dynamically */
     border-radius: 10px; /* Slightly larger radius to ensure it surrounds the content */
     pointer-events: none; /* Let clicks pass through */
-    z-index: 10002; /* Above everything else */
     transition: border-color 0.2s ease, box-shadow 0.3s ease;
-    will-change: border-color, transform, top, left;
+    will-change: border-color;
     box-sizing: border-box !important; /* Force border-box to ensure accurate sizing */
     margin: 0 !important; /* Remove any margins */
     padding: 0 !important; /* Remove any padding */

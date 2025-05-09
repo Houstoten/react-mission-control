@@ -57,20 +57,45 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
   useLayoutEffect(() => {
     if (!isActive) return;
 
-    // Create border overlay element if it doesn't exist
+    // Create border overlay container if it doesn't exist
     if (!borderRef.current) {
+      const borderContainer = document.createElement("div");
+      borderContainer.className = "expose-window-border-container";
+
       const borderElem = document.createElement("div");
       borderElem.className = "expose-window-border-overlay";
-      document.body.appendChild(borderElem);
-      borderRef.current = borderElem;
+
+      // Create label element at the same level as the border
+      const labelElem = document.createElement("div");
+      labelElem.className = "expose-window-label";
+      labelElem.style.opacity = "0"; // Initially hidden
+
+      // Append both elements to the container
+      borderContainer.appendChild(borderElem);
+      borderContainer.appendChild(labelElem);
+
+      document.body.appendChild(borderContainer);
+      borderRef.current = borderContainer;
 
       // Add handlers for hover
       const handleMouseEnter = () => {
-        if (borderRef.current) borderRef.current.classList.add("hover");
+        if (borderRef.current) {
+          borderRef.current.querySelector('.expose-window-border-overlay')?.classList.add("hover");
+
+          // Show the label on hover
+          const labelEl = borderRef.current.querySelector('.expose-window-label');
+          if (labelEl) (labelEl as HTMLElement).style.opacity = '1';
+        }
       };
 
       const handleMouseLeave = () => {
-        if (borderRef.current) borderRef.current.classList.remove("hover");
+        if (borderRef.current) {
+          borderRef.current.querySelector('.expose-window-border-overlay')?.classList.remove("hover");
+
+          // Hide the label when not hovering
+          const labelEl = borderRef.current.querySelector('.expose-window-label');
+          if (labelEl) (labelEl as HTMLElement).style.opacity = '0';
+        }
       };
 
       if (wrapperRef.current) {
@@ -80,7 +105,7 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
     }
 
     return () => {
-      // Clean up
+      // Clean up the container and all its children
       if (borderRef.current) {
         document.body.removeChild(borderRef.current);
         borderRef.current = null;
@@ -89,11 +114,19 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
       if (wrapperRef.current) {
         // Remove event listeners properly with named functions
         const handleMouseEnter = () => {
-          if (borderRef.current) borderRef.current.classList.add("hover");
+          if (borderRef.current) {
+            borderRef.current.querySelector('.expose-window-border-overlay')?.classList.add("hover");
+            const labelEl = borderRef.current.querySelector('.expose-window-label');
+            if (labelEl) (labelEl as HTMLElement).style.opacity = '1';
+          }
         };
 
         const handleMouseLeave = () => {
-          if (borderRef.current) borderRef.current.classList.remove("hover");
+          if (borderRef.current) {
+            borderRef.current.querySelector('.expose-window-border-overlay')?.classList.remove("hover");
+            const labelEl = borderRef.current.querySelector('.expose-window-label');
+            if (labelEl) (labelEl as HTMLElement).style.opacity = '0';
+          }
         };
 
         wrapperRef.current.removeEventListener("mouseenter", handleMouseEnter);
@@ -194,7 +227,7 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
         zIndex: 10000,
       });
 
-      // Update border overlay
+      // Update border container and its children
       if (borderRef.current) {
         const visualWidth = rect.width * finalScale;
         const visualHeight = rect.height * finalScale;
@@ -211,12 +244,59 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
         const containerWidth = scaledVisualWidth + borderOffset * 2;
         const containerHeight = scaledVisualHeight + borderOffset * 2;
 
+        // Position the container
         borderRef.current.style.transform = "none";
         borderRef.current.style.width = `${containerWidth}px`;
         borderRef.current.style.height = `${containerHeight}px`;
         borderRef.current.style.left = `${Math.round(visualCenterX - containerWidth / 2)}px`;
         borderRef.current.style.top = `${Math.round(visualCenterY - containerHeight / 2)}px`;
-        borderRef.current.style.borderWidth = `${borderWidth}px`;
+        borderRef.current.style.position = "fixed";
+        borderRef.current.style.pointerEvents = "none";
+        borderRef.current.style.zIndex = "10001";
+        borderRef.current.style.overflow = "visible";
+
+        // Style the border overlay
+        const borderOverlay = borderRef.current.querySelector('.expose-window-border-overlay') as HTMLElement;
+        if (borderOverlay) {
+          borderOverlay.style.position = "absolute";
+          borderOverlay.style.top = "0";
+          borderOverlay.style.left = "0";
+          borderOverlay.style.width = "100%";
+          borderOverlay.style.height = "100%";
+          borderOverlay.style.borderWidth = `${borderWidth}px`;
+          borderOverlay.style.borderStyle = "solid";
+          borderOverlay.style.borderColor = "rgba(255, 255, 255, 0.5)";
+          borderOverlay.style.borderRadius = "6px";
+          borderOverlay.style.boxSizing = "border-box";
+          borderOverlay.style.pointerEvents = "none";
+          borderOverlay.style.transition = "border-color 0.2s ease";
+        }
+
+        // Position the label
+        const labelElem = borderRef.current.querySelector('.expose-window-label') as HTMLElement;
+        if (labelElem && label) {
+          labelElem.textContent = label;
+          labelElem.style.position = "absolute";
+          labelElem.style.bottom = "-30px";
+          labelElem.style.left = "50%";
+          labelElem.style.transform = "translateX(-50%)";
+          labelElem.style.height = "auto";
+          labelElem.style.minHeight = "fit-content";
+          labelElem.style.maxWidth = "none";
+          labelElem.style.display = "flex";
+          labelElem.style.alignItems = "center";
+          labelElem.style.justifyContent = "center";
+          labelElem.style.backgroundColor = "rgba(0, 0, 0, 0.75)";
+          labelElem.style.color = "white";
+          labelElem.style.padding = "4px 8px";
+          labelElem.style.borderRadius = "4px";
+          labelElem.style.fontSize = "12px";
+          labelElem.style.fontWeight = "bold";
+          labelElem.style.whiteSpace = "nowrap";
+          labelElem.style.transition = "opacity 0.2s ease";
+          labelElem.style.pointerEvents = "none";
+          labelElem.style.zIndex = "10002"; // Higher than container
+        }
       }
     };
 
@@ -241,95 +321,19 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
       }
     };
   }, [isActive, borderWidth]);
-  // Create label div with fixed positioning that follows the component
+  // Handle label text updates
   useEffect(() => {
-    // Only create label when in expose mode with a valid label
-    if (isActive && label) {
-      // Create a label element if it doesn't exist
-      let labelElem = document.getElementById(`expose-label-${componentId.current}`);
+    // Only update label when in expose mode with a valid label
+    if (isActive && label && borderRef.current) {
+      // Get label element that's already created as a sibling to border
+      const labelElem = borderRef.current.querySelector('.expose-window-label');
 
-      if (!labelElem) {
-        labelElem = document.createElement('div');
-        labelElem.id = `expose-label-${componentId.current}`;
-        labelElem.className = 'expose-window-label';
+      if (labelElem) {
+        // Update label text
         labelElem.textContent = label;
-        document.body.appendChild(labelElem);
       }
-
-      // Update position when component position changes
-      const updateLabelPosition = () => {
-        if (!wrapperRef.current || !labelElem) return;
-
-        // Get component rect for calculations
-        const rect = wrapperRef.current.getBoundingClientRect();
-
-        // Get border overlay position if it exists
-        let centerX = rect.left + (rect.width / 2);
-        let centerY = rect.top + (rect.height / 2);
-
-        // If border overlay exists and is positioned, use its position instead
-        if (borderRef.current &&
-            borderRef.current.style.left &&
-            borderRef.current.style.top &&
-            borderRef.current.style.width &&
-            borderRef.current.style.height) {
-          const borderLeft = parseFloat(borderRef.current.style.left);
-          const borderTop = parseFloat(borderRef.current.style.top);
-          const borderWidth = parseFloat(borderRef.current.style.width);
-          const borderHeight = parseFloat(borderRef.current.style.height);
-
-          if (!isNaN(borderLeft) && !isNaN(borderTop) && !isNaN(borderWidth) && !isNaN(borderHeight)) {
-            centerX = borderLeft + (borderWidth / 2);
-            centerY = borderTop + (borderHeight / 2);
-          }
-        }
-
-        // Calculate scale for inverse scaling
-        const scale = animationStyles?.scale ? 1 / animationStyles.scale : 1;
-
-        // Position label near but not on the component
-        // (using absolute positioning with adjustments instead of transform)
-        labelElem.style.position = 'fixed';
-        labelElem.style.left = `${centerX - (labelElem.offsetWidth / 2)}px`;
-        labelElem.style.top = `${centerY - (labelElem.offsetHeight / 2)}px`;
-        labelElem.style.opacity = '0'; // Start with opacity 0, will be shown on hover
-        labelElem.style.zIndex = '20000';
-      };
-
-      // Update immediately
-      updateLabelPosition();
-
-      // Update when window resizes
-      window.addEventListener('resize', updateLabelPosition);
-
-      // Add hover handlers to the wrapper element
-      const handleMouseEnter = () => {
-        if (labelElem) labelElem.style.opacity = '1';
-      };
-
-      const handleMouseLeave = () => {
-        if (labelElem) labelElem.style.opacity = '0';
-      };
-
-      if (wrapperRef.current) {
-        wrapperRef.current.addEventListener('mouseenter', handleMouseEnter);
-        wrapperRef.current.addEventListener('mouseleave', handleMouseLeave);
-      }
-
-      return () => {
-        window.removeEventListener('resize', updateLabelPosition);
-
-        if (wrapperRef.current) {
-          wrapperRef.current.removeEventListener('mouseenter', handleMouseEnter);
-          wrapperRef.current.removeEventListener('mouseleave', handleMouseLeave);
-        }
-
-        if (labelElem && labelElem.parentNode) {
-          document.body.removeChild(labelElem);
-        }
-      };
     }
-  }, [isActive, label, componentId, animationStyles?.scale, animationStyles?.transform, borderRef.current]);
+  }, [isActive, label]);
 
   return (
     <div className="expose-container">
