@@ -230,16 +230,15 @@ export const ExposeProvider: React.FC<ExposeProviderProps> = ({
         // Animate out
         backdrop.style.opacity = "0";
         
-        // Restore scrolling and position - but don't automatically scroll yet
+        // Restore scrolling and position
         const scrollY = parseInt(document.body.style.top || '0', 10) * -1;
         document.body.style.position = '';
         document.body.style.top = '';
         document.body.style.width = '';
         document.body.style.overflowY = '';
         
-        // Make scroll position accessible to components
-        // @ts-ignore - adding property to window
-        window.__restoreScrollY = scrollY;
+        // Restore scroll position
+        window.scrollTo(0, scrollY);
 
         // Remove backdrop after animation completes
         setTimeout(() => {
