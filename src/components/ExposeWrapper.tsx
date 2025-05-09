@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useLayoutEffect } from "react";
 import { useExpose } from "../ExposeContext";
 import { createUniqueId } from "../utils";
 import "./Expose.css";
@@ -23,6 +23,7 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
   const wrapperRef = useRef<HTMLDivElement>(null);
   const exposeObj = useExpose();
   const { isActive, registerWindow, unregisterWindow, borderWidth } = exposeObj;
+  const rafRef = useRef<number | null>(null);
 
   // Store calculated transform and scale for this window
   const [animationStyles, setAnimationStyles] = useState<{
@@ -40,6 +41,12 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
 
     return () => {
       unregisterWindow(componentId.current);
+
+      // Clean up any pending animation frames
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
     };
   }, [registerWindow, unregisterWindow]);
 
@@ -47,7 +54,7 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
   const borderRef = useRef<HTMLDivElement | null>(null);
 
   // Handle hover state for border element
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!isActive) return;
 
     // Create border overlay element if it doesn't exist
@@ -80,9 +87,17 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
       }
 
       if (wrapperRef.current) {
-        // Remove event listeners
-        wrapperRef.current.removeEventListener("mouseenter", () => {});
-        wrapperRef.current.removeEventListener("mouseleave", () => {});
+        // Remove event listeners properly with named functions
+        const handleMouseEnter = () => {
+          if (borderRef.current) borderRef.current.classList.add("hover");
+        };
+
+        const handleMouseLeave = () => {
+          if (borderRef.current) borderRef.current.classList.remove("hover");
+        };
+
+        wrapperRef.current.removeEventListener("mouseenter", handleMouseEnter);
+        wrapperRef.current.removeEventListener("mouseleave", handleMouseLeave);
       }
     };
   }, [isActive]);
@@ -103,132 +118,129 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
   }, [highlightedComponent, componentId, setHighlightedComponent]);
 
   // Calculate and store animation properties
-  useEffect(() => {
-    if (!wrapperRef.current || !isActive) return;
-
-    const element = wrapperRef.current;
-    const rect = element.getBoundingClientRect();
-
-    // Get viewport dimensions
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-
-    // Find all windows that are being exposed
-    const allWindows = document.querySelectorAll(".expose-window");
-    const count = allWindows.length;
-
-    // Calculate optimal grid layout
-    const aspectRatio = viewportWidth / viewportHeight;
-    const columnsBase = Math.sqrt(count * aspectRatio);
-    const columns = Math.ceil(columnsBase);
-    const rows = Math.ceil(count / columns);
-
-    // Get this element's index
-    const index = Array.from(allWindows).indexOf(element);
-
-    // Calculate grid position
-    const gridCol = index % columns;
-    const gridRow = Math.floor(index / columns);
-
-    // Calculate cell dimensions with padding between cells
-    const padding = Math.min(viewportWidth, viewportHeight) * 0.05; // 5% of viewport
-    const cellWidth = (viewportWidth - padding * (columns + 1)) / columns;
-    const cellHeight = (viewportHeight - padding * (rows + 1)) / rows;
-
-    // Determine scaling factor based on component size and available space
-    const isSmall = rect.width < 200 || rect.height < 150;
-    const isVeryLarge =
-      rect.width > viewportWidth * 0.6 || rect.height > viewportHeight * 0.6;
-
-    // Calculate max scale that would fit in cell with padding
-    const maxWidthScale = (cellWidth / rect.width) * 0.85; // 85% of cell width
-    const maxHeightScale = (cellHeight / rect.height) * 0.85; // 85% of cell height
-    let targetScale = Math.min(maxWidthScale, maxHeightScale);
-
-    // Simple adjustment for very small components
-    if (isSmall && targetScale < 0.7) {
-      targetScale = Math.max(targetScale, 0.7); // Ensure small components aren't too tiny
+  useLayoutEffect(() => {
+    if (!wrapperRef.current || !isActive) {
+      // Cancel any pending animation frames when not active
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+      return;
     }
 
-    // Handle very large components
-    if (isVeryLarge) {
-      targetScale = Math.min(targetScale, 0.25); // Cap for very large components
-    }
+    // Use requestAnimationFrame for smoother animations
+    const updatePosition = () => {
+      if (!wrapperRef.current) return;
 
-    // Calculate center position for this grid cell in the visible viewport
-    const centerX = padding + gridCol * (cellWidth + padding) + cellWidth / 2;
-    const centerY = padding + gridRow * (cellHeight + padding) + cellHeight / 2;
+      const element = wrapperRef.current;
+      const rect = element.getBoundingClientRect();
 
-    // Calculate the current position relative to the viewport
-    const currentCenterX = rect.left + rect.width / 2;
-    const currentCenterY = rect.top + rect.height / 2;
+      // Get viewport dimensions
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
 
-    // Calculate transform to move from current position to target position in viewport
-    const translateX = centerX - currentCenterX;
-    const translateY = centerY - currentCenterY;
+      // Find all windows that are being exposed
+      const allWindows = document.querySelectorAll(".expose-window");
+      const count = allWindows.length;
 
-    // Store final values
-    const finalTranslateX = Math.round(translateX);
-    const finalTranslateY = Math.round(translateY);
-    const finalScale = parseFloat(targetScale.toFixed(3));
+      // Calculate optimal grid layout
+      const aspectRatio = viewportWidth / viewportHeight;
+      const columnsBase = Math.sqrt(count * aspectRatio);
+      const columns = Math.ceil(columnsBase);
+      const rows = Math.ceil(count / columns);
 
-    setAnimationStyles({
-      transform: `translate(${finalTranslateX}px, ${finalTranslateY}px)`,
-      scale: finalScale,
-      zIndex: 10000,
-    });
+      // Get this element's index
+      const index = Array.from(allWindows).indexOf(element);
 
-    // Update border overlay position to match the visual (transformed) position of the component
-    if (borderRef.current && isActive) {
-      // Scale width and height based on the scale factor
-      const visualWidth = rect.width * finalScale;
-      const visualHeight = rect.height * finalScale;
+      // Calculate grid position
+      const gridCol = index % columns;
+      const gridRow = Math.floor(index / columns);
 
-      // Calculate visual center position after transform
-      const visualCenterX = currentCenterX + finalTranslateX;
-      const visualCenterY = currentCenterY + finalTranslateY;
+      // Calculate cell dimensions with padding between cells
+      const padding = Math.min(viewportWidth, viewportHeight) * 0.05; // 5% of viewport
+      const cellWidth = (viewportWidth - padding * (columns + 1)) / columns;
+      const cellHeight = (viewportHeight - padding * (rows + 1)) / rows;
 
-      // Use the global border width from context - consistent across all components
+      // Determine scaling factor based on component size and available space
+      const isSmall = rect.width < 200 || rect.height < 150;
+      const isVeryLarge =
+        rect.width > viewportWidth * 0.6 || rect.height > viewportHeight * 0.6;
 
-      // Adjust the offset range for different component sizes
-      // Small components get more space, large components get less
-      const minOffset = 4; // Minimum offset in pixels
-      const maxOffset = 12; // Maximum offset in pixels
+      // Calculate max scale that would fit in cell with padding
+      const maxWidthScale = (cellWidth / rect.width) * 0.85; // 85% of cell width
+      const maxHeightScale = (cellHeight / rect.height) * 0.85; // 85% of cell height
+      let targetScale = Math.min(maxWidthScale, maxHeightScale);
 
-      // Calculate a more generous border offset based on the component's scale
-      // This creates more breathing room between the component and its border
-      const borderOffset = Math.max(
-        minOffset,
-        Math.min(maxOffset, 14 * (1 - finalScale)),
-      );
+      // Adjust scale for edge cases
+      if (isSmall && targetScale < 0.7) targetScale = Math.max(targetScale, 0.7);
+      if (isVeryLarge) targetScale = Math.min(targetScale, 0.25);
 
-      // Make the component slightly smaller (97%) for better visual balance
-      const scaledVisualWidth = visualWidth * 0.97;
-      const scaledVisualHeight = visualHeight * 0.97;
+      // Calculate center positions
+      const centerX = padding + gridCol * (cellWidth + padding) + cellWidth / 2;
+      const centerY = padding + gridRow * (cellHeight + padding) + cellHeight / 2;
+      const currentCenterX = rect.left + rect.width / 2;
+      const currentCenterY = rect.top + rect.height / 2;
 
-      // Create a container that's larger than the component by the offset amount
-      const containerWidth = scaledVisualWidth + borderOffset * 2;
-      const containerHeight = scaledVisualHeight + borderOffset * 2;
+      // Calculate transform values
+      const translateX = centerX - currentCenterX;
+      const translateY = centerY - currentCenterY;
+      const finalTranslateX = Math.round(translateX);
+      const finalTranslateY = Math.round(translateY);
+      const finalScale = parseFloat(targetScale.toFixed(3));
 
-      // Calculate positions based on the transformed component's actual center
-      // Instead of trying to calculate offsets, use the component's center
-      // and position the border relative to that
+      setAnimationStyles({
+        transform: `translate(${finalTranslateX}px, ${finalTranslateY}px)`,
+        scale: finalScale,
+        zIndex: 10000,
+      });
 
-      // Reset any transforms on the border to ensure clean positioning
-      borderRef.current.style.transform = "none";
+      // Update border overlay
+      if (borderRef.current) {
+        const visualWidth = rect.width * finalScale;
+        const visualHeight = rect.height * finalScale;
+        const visualCenterX = currentCenterX + finalTranslateX;
+        const visualCenterY = currentCenterY + finalTranslateY;
 
-      // Set dimensions first to ensure the border has the correct size
-      borderRef.current.style.width = `${containerWidth}px`;
-      borderRef.current.style.height = `${containerHeight}px`;
+        const borderOffset = Math.max(
+          4, // min offset
+          Math.min(12, 14 * (1 - finalScale)) // max offset
+        );
 
-      // Apply positioning with more correction on left/top to fix asymmetry
-      // +2px on left and top creates better visual balance
-      borderRef.current.style.left = `${Math.round(visualCenterX - containerWidth / 2)}px`;
-      borderRef.current.style.top = `${Math.round(visualCenterY - containerHeight / 2)}px`;
-      borderRef.current.style.borderWidth = `${borderWidth}px`;
-    }
-  }, [isActive, componentId]);
-  console.log(highlightedComponent, componentId.current);
+        const scaledVisualWidth = visualWidth * 0.97;
+        const scaledVisualHeight = visualHeight * 0.97;
+        const containerWidth = scaledVisualWidth + borderOffset * 2;
+        const containerHeight = scaledVisualHeight + borderOffset * 2;
+
+        borderRef.current.style.transform = "none";
+        borderRef.current.style.width = `${containerWidth}px`;
+        borderRef.current.style.height = `${containerHeight}px`;
+        borderRef.current.style.left = `${Math.round(visualCenterX - containerWidth / 2)}px`;
+        borderRef.current.style.top = `${Math.round(visualCenterY - containerHeight / 2)}px`;
+        borderRef.current.style.borderWidth = `${borderWidth}px`;
+      }
+    };
+
+    // Run immediately once for initial positioning
+    updatePosition();
+
+    // Then listen for resize events which might require recalculation
+    const handleResize = () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
+      rafRef.current = requestAnimationFrame(updatePosition);
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+    };
+  }, [isActive, borderWidth]);
   return (
     <div className="expose-container">
       <div
@@ -238,9 +250,8 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
           isActive
             ? (e) => {
                 e.stopPropagation();
-                // Get the element's original position and scroll to it
                 if (wrapperRef.current) {
-                  // Deactivate expose mode if clicked
+                  // Deactivate expose mode
                   if (exposeObj.setActive) {
                     exposeObj.setActive(false);
                   }
@@ -248,43 +259,34 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
                   // Set this component as highlighted
                   setHighlightedComponent(componentId.current);
 
-                  // Wait for the transition to complete before scrolling
-                  setTimeout(() => {
-                    const rect = wrapperRef.current?.getBoundingClientRect();
-                    if (rect) {
-                      // Calculate position relative to the document
-                      const scrollY = window.scrollY + rect.top - 50; // 50px top margin
+                  // Use requestAnimationFrame for smoother scrolling after transition
+                  requestAnimationFrame(() => {
+                    setTimeout(() => {
+                      if (!wrapperRef.current) return;
+                      const rect = wrapperRef.current.getBoundingClientRect();
+                      // Calculate position relative to the document with a small margin
+                      const scrollY = window.scrollY + rect.top - 50;
                       window.scrollTo({
                         top: scrollY,
                         behavior: "smooth",
                       });
-                    }
-                  }, 200); // Match the transition time (0.2s)
+                    }, 200); // Match transition time
+                  });
                 }
               }
             : undefined
         }
         style={{
           ...style,
-          transition:
-            "transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease",
+          transition: "transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease",
           transformOrigin: "center center",
-          willChange:
-            isActive || highlightedComponent === componentId.current
-              ? "transform, opacity, filter"
-              : "auto",
-          zIndex:
-            animationStyles && isActive
-              ? animationStyles.zIndex
-              : highlightedComponent === componentId.current
-                ? 1000
-                : "auto",
-          // Direct style application for maximum compatibility
-          transform:
-            animationStyles && isActive
-              ? `translate(${animationStyles.transform.match(/translate\((.*?)px,/)?.[1] || 0}px, ${animationStyles.transform.match(/px,\s*(.*?)px\)/)?.[1] || 0}px) scale(${animationStyles?.scale || 1})`
-              : "none",
-          // Make wrapper invisible (but don't affect children) when not in expose mode
+          willChange: (isActive || highlightedComponent === componentId.current) ? "transform, opacity, filter" : "auto",
+          zIndex: animationStyles && isActive
+            ? animationStyles.zIndex
+            : highlightedComponent === componentId.current ? 1000 : "auto",
+          transform: animationStyles && isActive
+            ? `translate(${animationStyles.transform.match(/translate\((.*?)px,/)?.[1] || 0}px, ${animationStyles.transform.match(/px,\s*(.*?)px\)/)?.[1] || 0}px) scale(${animationStyles?.scale || 1})`
+            : "none",
           background: isActive ? undefined : "transparent",
           boxShadow: isActive
             ? undefined
@@ -293,24 +295,15 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
               : "none",
           width: "100%",
           height: "100%",
-          // We rely on the ::before overlay to block pointer events to children
           pointerEvents: "auto",
-          // Apply blur to other elements when this one is highlighted - note other elements get blurred via CSS classes
-          filter:
-            highlightedComponent === componentId.current ? "none" : "blur(0px)",
+          filter: highlightedComponent === componentId.current ? "none" : "blur(0px)",
         }}
         data-expose-id={componentId.current}
         data-scale={animationStyles?.scale || 1}
-        data-highlighted={
-          highlightedComponent === componentId.current ? "true" : "false"
-        }
+        data-highlighted={highlightedComponent === componentId.current ? "true" : "false"}
       >
         {children}
-
-        {/* Display label when component is exposed and hovered */}
-        {label && isActive && (
-          <div className="expose-window-label">{label}</div>
-        )}
+        {label && isActive && <div className="expose-window-label">{label}</div>}
       </div>
     </div>
   );

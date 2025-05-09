@@ -4,6 +4,7 @@ import React, {
   useState,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
 } from "react";
 
@@ -190,60 +191,87 @@ export const ExposeProvider: React.FC<ExposeProviderProps> = ({
   }, [isActive, activate, deactivate, shortcut]);
 
   // Create backdrop element when Expose is active and handle body scrolling
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (isActive) {
-      // Create backdrop overlay
-      const backdrop = document.createElement("div");
-      backdrop.className = "expose-backdrop";
-      backdrop.style.position = "fixed";
-      backdrop.style.top = "0";
-      backdrop.style.left = "0";
-      backdrop.style.width = "100vw";
-      backdrop.style.height = "100vh";
-      backdrop.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
-      backdrop.style.backdropFilter = `blur(${blurAmount}px)`;
-      // Apply Safari prefix with correct TypeScript handling
-      (backdrop.style as any)["-webkit-backdrop-filter"] = `blur(${blurAmount}px)`;
-      backdrop.style.zIndex = "9998";
-      backdrop.style.transition = "opacity 0.3s ease";
+      const backdropRef = { current: null as HTMLDivElement | null };
+      let animationFrameId: number | null = null;
+      let animationEndTimer: number | null = null;
 
-      // Add click handler to close on backdrop click
-      backdrop.addEventListener("click", deactivate);
+      // Create backdrop with requestAnimationFrame for smoother animation
+      animationFrameId = requestAnimationFrame(() => {
+        // Create backdrop overlay
+        const backdrop = document.createElement("div");
+        backdropRef.current = backdrop;
+        backdrop.className = "expose-backdrop";
+        backdrop.style.position = "fixed";
+        backdrop.style.top = "0";
+        backdrop.style.left = "0";
+        backdrop.style.width = "100vw";
+        backdrop.style.height = "100vh";
+        backdrop.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
+        backdrop.style.opacity = "0"; // Start with 0 opacity
+        backdrop.style.backdropFilter = `blur(${blurAmount}px)`;
+        // Apply Safari prefix with correct TypeScript handling
+        (backdrop.style as any)["-webkit-backdrop-filter"] = `blur(${blurAmount}px)`;
+        backdrop.style.zIndex = "9998";
+        backdrop.style.transition = "opacity 0.2s ease";
 
-      document.body.appendChild(backdrop);
-      
-      // Store current scroll position
-      const scrollY = window.scrollY;
-      
-      // Prevent scrolling by fixing the body position
-      document.body.style.position = 'fixed';
-      document.body.style.top = `-${scrollY}px`;
-      document.body.style.width = '100%';
-      document.body.style.overflowY = 'scroll'; // Prevents layout shift by keeping scrollbar visible
-      
-      // Animate in
-      setTimeout(() => {
-        backdrop.style.opacity = "1";
-      }, 10);
+        // Add click handler to close on backdrop click
+        backdrop.addEventListener("click", deactivate);
+        document.body.appendChild(backdrop);
+
+        // Store current scroll position
+        const scrollY = window.scrollY;
+
+        // Prevent scrolling by fixing the body position
+        document.body.style.position = 'fixed';
+        document.body.style.top = `-${scrollY}px`;
+        document.body.style.width = '100%';
+        document.body.style.overflowY = 'scroll'; // Prevents layout shift by keeping scrollbar visible
+
+        // Animate in - use requestAnimationFrame for smoother animation
+        requestAnimationFrame(() => {
+          if (backdrop) backdrop.style.opacity = "1";
+        });
+      });
 
       return () => {
-        // Animate out
-        backdrop.style.opacity = "0";
-        
-        // Restore scrolling and position
-        const scrollY = parseInt(document.body.style.top || '0', 10) * -1;
-        document.body.style.position = '';
-        document.body.style.top = '';
-        document.body.style.width = '';
-        document.body.style.overflowY = '';
-        
-        // Restore scroll position
-        window.scrollTo(0, scrollY);
+        // Clean up animation frame if component unmounts before it runs
+        if (animationFrameId !== null) {
+          cancelAnimationFrame(animationFrameId);
+        }
 
-        // Remove backdrop after animation completes
-        setTimeout(() => {
-          document.body.removeChild(backdrop);
-        }, 300);
+        if (backdropRef.current) {
+          const backdrop = backdropRef.current;
+          // Animate out
+          backdrop.style.opacity = "0";
+
+          // Restore scrolling and position
+          const scrollY = parseInt(document.body.style.top || '0', 10) * -1;
+          document.body.style.position = '';
+          document.body.style.top = '';
+          document.body.style.width = '';
+          document.body.style.overflowY = '';
+
+          // Restore scroll position
+          window.scrollTo(0, scrollY);
+
+          // Remove backdrop after animation completes using requestAnimationFrame
+          animationEndTimer = window.setTimeout(() => {
+            requestAnimationFrame(() => {
+              if (backdrop.parentNode === document.body) {
+                document.body.removeChild(backdrop);
+              }
+            });
+          }, 200); // Reduced from 300ms to 200ms for faster cleanup
+
+          // No need to return another cleanup function here
+        }
+
+        // Clean up any remaining timeout
+        if (animationEndTimer !== null) {
+          window.clearTimeout(animationEndTimer);
+        }
       };
     }
   }, [isActive, deactivate, blurAmount]);
