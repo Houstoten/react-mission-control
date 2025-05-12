@@ -1,6 +1,6 @@
-# Fine-Bites - React Exposé
+# React Expose
 
-Fine-Bites is a lightweight React library that brings the macOS Exposé experience to your web applications. It allows your UI components to be organized into a grid view when activated, providing an elegant overview of all your app's sections.
+A macOS Mission Control and Exposé-like experiences for web applications.
 
 <div align="center">
   <h3>Exposé for your React app</h3>
@@ -12,39 +12,41 @@ Fine-Bites is a lightweight React library that brings the macOS Exposé experien
 - **Exposé View**: Zoom out to see all UI components at once
 - **Smooth Animations**: Beautiful zoom-in and zoom-out transitions
 - **Keyboard Shortcuts**: Activate with a keyboard shortcut (default: Ctrl+Up)
-- **Window Titles**: Display titles for each component in Exposé view
+- **Component Labels**: Display labels for each component in Exposé view
 - **High Performance**: GPU-accelerated animations with minimal DOM manipulation
 - **Simple API**: Just wrap your components with `<ExposeWrapper>`
+- **Component Highlighting**: Highlight selected components with visual effects
 
 ## Installation
 
 ```bash
-npm install fine-bites
+npm install react-expose
 ```
 
 ## Basic Usage
 
 ```jsx
 import React from 'react';
-import { ExposeProvider, ExposeWrapper } from 'fine-bites';
+import { ExposeProvider, ExposeWrapper, ExposeTrigger } from 'react-expose';
 
 function App() {
   return (
-    <ExposeProvider>
+    <ExposeProvider shortcut="Control+ArrowUp" blurAmount={10}>
+      <ExposeTrigger />
       <div className="app">
-        <ExposeWrapper title="Dashboard">
+        <ExposeWrapper label="Dashboard">
           <div className="dashboard-panel">
             {/* Dashboard content */}
           </div>
         </ExposeWrapper>
         
-        <ExposeWrapper title="User Management">
+        <ExposeWrapper label="User Management">
           <div className="users-panel">
             {/* User management content */}
           </div>
         </ExposeWrapper>
         
-        <ExposeWrapper title="Settings">
+        <ExposeWrapper label="Settings">
           <div className="settings-panel">
             {/* Settings content */}
           </div>
@@ -64,7 +66,7 @@ Wrap your application with the `ExposeProvider` to enable the Exposé functional
 ```jsx
 <ExposeProvider
   shortcut="Control+ArrowUp" // Keyboard shortcut to trigger Exposé
-  blurAmount={8} // Background blur amount in pixels
+  blurAmount={10} // Background blur amount in pixels
   onActivate={() => console.log('Exposé activated')}
   onDeactivate={() => console.log('Exposé deactivated')}
 >
@@ -78,13 +80,21 @@ Wrap individual components that you want to include in the Exposé view.
 
 ```jsx
 <ExposeWrapper
-  title="Component Title" // Title shown in Exposé view
+  label="Component Label" // Label shown in Exposé view
   id="unique-id" // Optional unique ID (auto-generated if not provided)
   className="custom-class" // Additional CSS classes
   style={{ /* Custom styles */ }}
 >
   {/* Your component content */}
 </ExposeWrapper>
+```
+
+### ExposeTrigger
+
+Optional component that handles keyboard shortcuts for activating the Exposé view.
+
+```jsx
+<ExposeTrigger />
 ```
 
 ## API
@@ -95,7 +105,7 @@ Access and control the Exposé functionality programmatically.
 
 ```jsx
 import React from 'react';
-import { useExpose } from 'fine-bites';
+import { useExpose } from 'react-expose';
 
 function ExposeButton() {
   const { isActive, activate, deactivate } = useExpose();
@@ -110,16 +120,7 @@ function ExposeButton() {
 
 ## Development
 
-```bash
-# Install dependencies
-npm install
-
-# Start development server
-npm start
-
-# Build the library
-npm run build
-```
+See [DEVELOPMENT.md](DEVELOPMENT.md) for development setup instructions.
 
 ## License
 
