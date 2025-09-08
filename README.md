@@ -1,131 +1,165 @@
 # React Expose
 
-A macOS Mission Control and Exposé-like experiences for web applications.
+A macOS Mission Control and Exposé-like experience for React applications.
 
 <div align="center">
-  <h3>Exposé for your React app</h3>
+  <h3>Expose for your React app</h3>
   <p>Press Ctrl+Up to see all your components, then click to select.</p>
 </div>
 
-## Features
+## 📦 Monorepo Structure
 
-- **Exposé View**: Zoom out to see all UI components at once
-- **Smooth Animations**: Beautiful zoom-in and zoom-out transitions
-- **Keyboard Shortcuts**: Activate with a keyboard shortcut (default: Ctrl+Up)
-- **Component Labels**: Display labels for each component in Exposé view
-- **High Performance**: GPU-accelerated animations with minimal DOM manipulation
-- **Simple API**: Just wrap your components with `<ExposeWrapper>`
-- **Component Highlighting**: Highlight selected components with visual effects
+This project uses a monorepo structure with pnpm workspaces:
 
-## Installation
+```
+react-expose/
+├── packages/
+│   └── react-expose/        # Main library package
+├── apps/
+│   └── playground/          # Demo application
+└── package.json            # Root workspace configuration
+```
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Node.js >= 18.0.0
+- pnpm >= 8.0.0
+
+### Installation
+
+```bash
+# Install pnpm if you haven't already
+npm install -g pnpm
+
+# Install dependencies
+pnpm install
+
+# Start development
+pnpm dev
+```
+
+This will start both the library (in watch mode) and the playground app.
+
+## 📚 Development
+
+### Available Scripts
+
+```bash
+# Start everything in development mode
+pnpm dev
+
+# Build everything
+pnpm build
+
+# Run only the library in dev mode
+pnpm dev:lib
+
+# Run only the playground
+pnpm dev:playground
+
+# Type checking
+pnpm typecheck
+
+# Clean all build artifacts
+pnpm clean
+```
+
+### Working on the Library
+
+The library source code is in `packages/react-expose/`. It uses:
+- **tsup** for bundling
+- **TypeScript** for type safety
+- Outputs both CommonJS and ESM formats
+
+```bash
+cd packages/react-expose
+pnpm dev  # Start in watch mode
+pnpm build # Build for production
+```
+
+### Working on the Playground
+
+The playground is in `apps/playground/`. It uses:
+- **Vite** for fast development
+- **React 18**
+- Hot module replacement
+
+```bash
+cd apps/playground
+pnpm dev  # Start dev server
+pnpm build # Build for production
+```
+
+## 🏗️ Architecture
+
+### Technology Stack
+
+- **Build Tools**: Vite (playground), tsup (library)
+- **Package Manager**: pnpm with workspaces
+- **Language**: TypeScript
+- **Framework**: React 18+
+- **Styling**: CSS modules
+
+### Project Organization
+
+- `packages/react-expose/` - Core library
+  - `src/components/` - React components
+  - `src/context/` - React context providers
+  - `src/hooks/` - Custom hooks
+  - `src/utils/` - Utility functions
+  - `src/types.ts` - TypeScript definitions
+
+- `apps/playground/` - Demo application
+  - Showcases library features
+  - Development testing ground
+  - Documentation examples
+
+## 📖 Library Usage
+
+### Installation (when published)
 
 ```bash
 npm install react-expose
+# or
+pnpm add react-expose
 ```
 
-## Basic Usage
+### Basic Usage
 
 ```jsx
-import React from 'react';
 import { ExposeProvider, ExposeWrapper, ExposeTrigger } from 'react-expose';
 
 function App() {
   return (
     <ExposeProvider shortcut="Control+ArrowUp" blurAmount={10}>
       <ExposeTrigger />
-      <div className="app">
-        <ExposeWrapper label="Dashboard">
-          <div className="dashboard-panel">
-            {/* Dashboard content */}
-          </div>
-        </ExposeWrapper>
-        
-        <ExposeWrapper label="User Management">
-          <div className="users-panel">
-            {/* User management content */}
-          </div>
-        </ExposeWrapper>
-        
-        <ExposeWrapper label="Settings">
-          <div className="settings-panel">
-            {/* Settings content */}
-          </div>
-        </ExposeWrapper>
-      </div>
+      
+      <ExposeWrapper label="Dashboard">
+        <div>Your dashboard content</div>
+      </ExposeWrapper>
+      
+      <ExposeWrapper label="Settings">
+        <div>Your settings content</div>
+      </ExposeWrapper>
     </ExposeProvider>
   );
 }
 ```
 
-## Components
+## 🤝 Contributing
 
-### ExposeProvider
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-Wrap your application with the `ExposeProvider` to enable the Exposé functionality.
-
-```jsx
-<ExposeProvider
-  shortcut="Control+ArrowUp" // Keyboard shortcut to trigger Exposé
-  blurAmount={10} // Background blur amount in pixels
-  onActivate={() => console.log('Exposé activated')}
-  onDeactivate={() => console.log('Exposé deactivated')}
->
-  {/* Your app content */}
-</ExposeProvider>
-```
-
-### ExposeWrapper
-
-Wrap individual components that you want to include in the Exposé view.
-
-```jsx
-<ExposeWrapper
-  label="Component Label" // Label shown in Exposé view
-  id="unique-id" // Optional unique ID (auto-generated if not provided)
-  className="custom-class" // Additional CSS classes
-  style={{ /* Custom styles */ }}
->
-  {/* Your component content */}
-</ExposeWrapper>
-```
-
-### ExposeTrigger
-
-Optional component that handles keyboard shortcuts for activating the Exposé view.
-
-```jsx
-<ExposeTrigger />
-```
-
-## API
-
-### useExpose Hook
-
-Access and control the Exposé functionality programmatically.
-
-```jsx
-import React from 'react';
-import { useExpose } from 'react-expose';
-
-function ExposeButton() {
-  const { isActive, activate, deactivate } = useExpose();
-  
-  return (
-    <button onClick={() => isActive ? deactivate() : activate()}>
-      {isActive ? 'Exit Exposé' : 'Show Exposé'}
-    </button>
-  );
-}
-```
-
-## Development
-
-See [DEVELOPMENT.md](DEVELOPMENT.md) for development setup instructions.
-
-## License
+## 📄 License
 
 MIT
 
 ---
 
-Inspired by macOS Exposé.
+Built with ❤️ using modern React development practices.

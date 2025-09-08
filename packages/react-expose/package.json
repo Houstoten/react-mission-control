@@ -1,0 +1,62 @@
+{
+  "name": "react-expose",
+  "version": "1.0.0",
+  "description": "macOS Mission Control and Exposé-like experiences for web applications",
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/react-expose"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs"
+    },
+    "./styles.css": "./dist/styles.css"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "tsdown --watch",
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "clean": "rm -rf dist .turbo"
+  },
+  "peerDependencies": {
+    "react": ">=16.8.0",
+    "react-dom": ">=16.8.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "tsdown": "^0.14.2",
+    "typescript": "^5.3.3"
+  },
+  "keywords": [
+    "react",
+    "mission-control",
+    "expose",
+    "ui",
+    "animation",
+    "macos",
+    "grid",
+    "overview"
+  ],
+  "sideEffects": [
+    "*.css"
+  ],
+  "dependencies": {
+    "zustand": "^5.0.8"
+  }
+}

@@ -1,51 +1,39 @@
 {
-  "name": "fine-bites",
-  "version": "0.1.0",
-  "description": "macOS Mission Control and Exposé-like experiences for web applications",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "name": "@react-expose/monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "React Exposé - macOS Mission Control and Exposé-like experiences for web applications",
   "scripts": {
-    "start": "react-scripts start",
-    "build": "tsc",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
-  },
-  "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "dev": "turbo run dev",
+    "dev:lib": "turbo run dev --filter=react-expose",
+    "dev:playground": "turbo run dev --filter=@react-expose/playground",
+    "build": "turbo run build",
+    "build:lib": "turbo run build --filter=react-expose",
+    "build:playground": "turbo run build --filter=@react-expose/playground",
+    "typecheck": "turbo run typecheck",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "clean": "turbo run clean && rm -rf node_modules .turbo",
+    "test": "turbo run test",
+    "prepare": "husky install"
   },
   "devDependencies": {
-    "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0",
-    "react-scripts": "^5.0.1",
-    "typescript": "^4.9.5"
+    "@biomejs/biome": "^2.2.3",
+    "@changesets/cli": "^2.27.1",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0",
+    "turbo": "^2.5.6"
   },
-  "peerDependencies": {
-    "react": ">=16.8.0",
-    "react-dom": ">=16.8.0"
+  "packageManager": "pnpm@8.14.0",
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
   },
-  "files": [
-    "dist"
-  ],
-  "keywords": [
-    "react",
-    "mission-control",
-    "expose",
-    "ui",
-    "animation"
-  ],
-  "author": "",
-  "license": "MIT",
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,json}": [
+      "biome check --write --no-errors-on-unmatched"
     ]
   }
 }

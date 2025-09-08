@@ -1,4 +1,57 @@
+# Claude settings
 **/.claude/settings.local.json
-node_modules
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# Testing
+coverage/
+*.lcov
+.nyc_output
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment variables
 .env
-CLAUDE.md
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Package manager
+.pnpm-store/
+.yarn/
+
+# Turbo
+.turbo/
+*.turbo
+
+# Next.js
+.next/
+out/
+next-env.d.ts
+
+# Misc
+.cache/
+.vercel
+.netlify
