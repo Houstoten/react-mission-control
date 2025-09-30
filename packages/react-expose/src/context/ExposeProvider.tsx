@@ -17,7 +17,7 @@ export const ExposeProvider: React.FC<ExposeProviderProps> = ({
   onDeactivate,
   blurAmount = 10,
 }) => {
-  const keyHoldTimerRef = useRef<number | null>(null);
+  const lastKeyPressRef = useRef<number>(0);
   const isActive = useIsExposeActive();
   const { activate, deactivate, setConfig, updateBorderWidthForScreen } = useExposeActions();
 
@@ -42,8 +42,25 @@ export const ExposeProvider: React.FC<ExposeProviderProps> = ({
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Handle double-tap shortcut (e.g., "ArrowUp+ArrowUp")
+      if (!isActive && shortcut === "ArrowUp+ArrowUp") {
+        if (e.key === "ArrowUp") {
+          e.preventDefault();
+          const now = Date.now();
+          const timeSinceLastPress = now - lastKeyPressRef.current;
+          
+          // If the last press was within 300ms, activate
+          if (timeSinceLastPress < 300) {
+            activate();
+            lastKeyPressRef.current = 0; // Reset
+          } else {
+            // Record this press time
+            lastKeyPressRef.current = now;
+          }
+        }
+      }
       // Handle activate shortcut with modifiers
-      if (!isActive && shortcut.includes("+")) {
+      else if (!isActive && shortcut.includes("+")) {
         const parts = shortcut.split("+");
         const key = parts.pop()?.toLowerCase();
         const modifiers = parts.map((mod) => mod.toLowerCase());
@@ -60,24 +77,10 @@ export const ExposeProvider: React.FC<ExposeProviderProps> = ({
           activate();
         }
       }
-      // Handle arrow key held (without modifiers), activate after 1 second
-      else if (
-        !isActive &&
-        shortcut.toLowerCase() === "arrowup" &&
-        e.key.toLowerCase() === "arrowup"
-      ) {
+      // Handle single key shortcut
+      else if (!isActive && e.key === shortcut) {
         e.preventDefault();
-
-        // Clear any existing timer
-        if (keyHoldTimerRef.current !== null) {
-          window.clearTimeout(keyHoldTimerRef.current);
-        }
-
-        // Set a timer to activate Exposé after 1 second
-        keyHoldTimerRef.current = window.setTimeout(() => {
-          activate();
-          keyHoldTimerRef.current = null;
-        }, 1000);
+        activate();
       }
 
       // Handle escape to deactivate
@@ -87,26 +90,10 @@ export const ExposeProvider: React.FC<ExposeProviderProps> = ({
       }
     };
 
-    // Handle key up to cancel activation if released before 1 second
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (!isActive && shortcut.toLowerCase() === "arrowup" && e.key.toLowerCase() === "arrowup") {
-        // If the key was released before the 1 second timer completed, cancel activation
-        if (keyHoldTimerRef.current !== null) {
-          window.clearTimeout(keyHoldTimerRef.current);
-          keyHoldTimerRef.current = null;
-        }
-      }
-    };
-
     window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
 
     return () => {
-      if (keyHoldTimerRef.current !== null) {
-        window.clearTimeout(keyHoldTimerRef.current);
-      }
       window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
     };
   }, [isActive, activate, deactivate, shortcut]);
 
@@ -117,28 +104,44 @@ export const ExposeProvider: React.FC<ExposeProviderProps> = ({
     }
 
     const backdropRef = { current: null as HTMLDivElement | null };
+    const portalRef = { current: null as HTMLDivElement | null };
     let animationFrameId: number | null = null;
     let animationEndTimer: number | null = null;
 
     // Create backdrop with requestAnimationFrame for smoother animation
     animationFrameId = requestAnimationFrame(() => {
+      // Check if a backdrop already exists
+      const existingBackdrop = document.getElementById("expose-backdrop-main");
+      if (existingBackdrop) {
+        // If backdrop already exists, just return
+        backdropRef.current = existingBackdrop as HTMLDivElement;
+        return;
+      }
+
       // Create backdrop overlay
       const backdrop = document.createElement("div");
       backdropRef.current = backdrop;
+      backdrop.id = "expose-backdrop-main";
       backdrop.className = "expose-backdrop";
       backdrop.style.position = "fixed";
       backdrop.style.top = "0";
       backdrop.style.left = "0";
       backdrop.style.width = "100vw";
       backdrop.style.height = "100vh";
-      backdrop.style.backgroundColor = "rgba(0, 0, 0, 0.5)"; // Dark overlay instead of blur
+      backdrop.style.backgroundColor = "rgba(0, 0, 0, 0.5)"; // Dark overlay
       backdrop.style.opacity = "0"; // Start with 0 opacity
-      backdrop.style.zIndex = "9000"; // Lower z-index so exposed windows appear above
+      backdrop.style.zIndex = "9999"; // High z-index for backdrop
       backdrop.style.transition = "opacity 0.2s ease";
 
       // Add click handler to close on backdrop click
       backdrop.addEventListener("click", deactivate);
-      document.body.appendChild(backdrop);
+      
+      // Insert backdrop as first child of body to ensure it's below all other elements
+      if (document.body.firstChild) {
+        document.body.insertBefore(backdrop, document.body.firstChild);
+      } else {
+        document.body.appendChild(backdrop);
+      }
 
       // Store current scroll position
       const scrollY = window.scrollY;
@@ -161,30 +164,37 @@ export const ExposeProvider: React.FC<ExposeProviderProps> = ({
         cancelAnimationFrame(animationFrameId);
       }
 
-      if (backdropRef.current) {
-        const backdrop = backdropRef.current;
+      // Find and remove the backdrop
+      const backdrop = document.getElementById("expose-backdrop-main");
+      if (backdrop) {
         // Animate out
         backdrop.style.opacity = "0";
-
-        // Restore scrolling and position
-        const scrollY = parseInt(document.body.style.top || "0", 10) * -1;
-        document.body.style.position = "";
-        document.body.style.top = "";
-        document.body.style.width = "";
-        document.body.style.overflowY = "";
-
-        // Restore scroll position
-        window.scrollTo(0, scrollY);
-
-        // Remove backdrop after animation completes
-        animationEndTimer = window.setTimeout(() => {
-          requestAnimationFrame(() => {
-            if (backdrop.parentNode === document.body) {
-              document.body.removeChild(backdrop);
-            }
-          });
+        
+        // Remove after animation
+        setTimeout(() => {
+          if (backdrop.parentNode) {
+            backdrop.parentNode.removeChild(backdrop);
+          }
         }, 200);
       }
+      
+      // Also clean up any stray backdrops (for safety)
+      const allBackdrops = document.querySelectorAll(".expose-backdrop");
+      allBackdrops.forEach((bd) => {
+        if (bd instanceof HTMLElement && bd.id !== "expose-backdrop-main") {
+          bd.remove();
+        }
+      });
+
+      // Restore scrolling and position
+      const scrollY = parseInt(document.body.style.top || "0", 10) * -1;
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.width = "";
+      document.body.style.overflowY = "";
+
+      // Restore scroll position
+      window.scrollTo(0, scrollY);
 
       // Clean up any remaining timeout
       if (animationEndTimer !== null) {

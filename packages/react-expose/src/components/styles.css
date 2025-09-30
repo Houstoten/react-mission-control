@@ -6,6 +6,12 @@
   flex-direction: column;
 }
 
+/* When exposé is active, ensure container is above backdrop */
+body:has(.expose-backdrop) .expose-container {
+  position: relative !important;
+  z-index: 100000 !important;
+}
+
 .expose-window {
   position: relative;
   box-sizing: border-box;
@@ -21,7 +27,7 @@
   box-shadow:
     0 0 0 4px rgba(64, 156, 255, 0.7),
     0 5px 20px rgba(0, 0, 0, 0.2) !important;
-  z-index: 1000 !important;
+  z-index: 100002 !important;
   position: relative;
   transform: scale(1.02) !important; /* Slightly larger to stand out */
   transition:
@@ -105,7 +111,7 @@ body:has(.expose-window-highlighted) .expose-window:not(.expose-window-highlight
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-  z-index: 20002; /* Very high z-index to ensure visibility */
+  z-index: 100004; /* Very high z-index to ensure visibility */
   pointer-events: none;
   background-color: rgba(0, 0, 0, 0.75);
   border-radius: 6px;
@@ -130,8 +136,8 @@ body:has(.expose-window-highlighted) .expose-window:not(.expose-window-highlight
   transition:
     transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
     box-shadow 0.3s ease;
-  position: relative;
-  z-index: 10000 !important; /* Ensure windows are above backdrop */
+  position: relative !important;
+  z-index: 100001 !important; /* Ensure windows are above backdrop */
 }
 
 /* Overlay div to block click-through */
@@ -156,7 +162,7 @@ body:has(.expose-window-highlighted) .expose-window:not(.expose-window-highlight
 .expose-window-border-container {
   position: fixed;
   pointer-events: none;
-  z-index: 10001;
+  z-index: 100002;
   overflow: visible !important;
   box-sizing: border-box !important;
 }
@@ -193,7 +199,7 @@ body:has(.expose-window-highlighted) .expose-window:not(.expose-window-highlight
   width: 100vw !important;
   height: 100vh !important;
   background: rgba(0, 0, 0, 0.6) !important;
-  z-index: 9000 !important;
+  z-index: 9999 !important;
   pointer-events: auto;
 }
 
@@ -214,5 +220,5 @@ body:has(.expose-window-highlighted) .expose-window:not(.expose-window-highlight
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  z-index: 10001;
+  z-index: 100002;
 }

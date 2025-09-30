@@ -1,381 +1,142 @@
 # React Expose Development Guide
 
-This document outlines the development process and architecture for the **react-expose** library, which provides a macOS Mission Control and Exposé-like experience for web applications.
+This document outlines the development process, architecture, and roadmap for **React Expose** - a library providing macOS Mission Control and Exposé-like experiences for web applications.
 
-## Project Structure
+## 🏗️ Modern Stack Overview
 
-The project is organized into two main parts:
+### Build & Development Tools
+- **Turborepo**: Task orchestration with intelligent caching
+- **pnpm workspaces**: Efficient monorepo dependency management
+- **tsdown**: Modern, fast TypeScript bundler (Rolldown-based)
+- **Vite**: Lightning-fast playground development
+- **Biome**: Fast, unified linting and formatting
+- **TypeScript 5.3+**: Type safety and modern features
 
-1. **Library (`react-expose/`)**: The core library that can be imported into any React project.
-2. **Demo (`/`)**: A demonstration application showcasing the library's features.
-
-### Library Structure
+## 📁 Monorepo Structure
 
 ```
 react-expose/
-├── src/
-│   ├── components/
-│   │   ├── ExposeWrapper.tsx      # Main wrapper component for exposable elements
-│   │   ├── ExposeTrigger.tsx      # Component for handling expose activation triggers
-│   │   └── styles.css             # Component styles
-│   ├── context/
-│   │   └── ExposeContext.tsx      # React context for expose state management
-│   ├── hooks/
-│   │   └── index.ts               # Custom hooks
-│   ├── utils/
-│   │   └── index.ts               # Utility functions
-│   ├── types.ts                   # TypeScript type definitions
-│   └── index.ts                   # Main entry point for the library
-├── package.json
-├── tsconfig.json
-└── README.md
+├── packages/
+│   └── react-expose/              # Core library package
+│       ├── src/
+│       │   ├── components/        # React components
+│       │   │   ├── ExposeWrapper.tsx
+│       │   │   ├── ExposeTrigger.tsx
+│       │   │   └── styles.css
+│       │   ├── context/           # State management
+│       │   │   └── ExposeContext.tsx
+│       │   ├── hooks/             # Custom React hooks
+│       │   ├── utils/             # Utility functions
+│       │   ├── types.ts           # TypeScript definitions
+│       │   └── index.ts           # Main entry point
+│       ├── tsdown.config.ts       # Bundler configuration
+│       └── package.json
+├── apps/
+│   └── playground/                # Demo application
+│       ├── src/
+│       │   ├── App.tsx
+│       │   └── main.tsx
+│       ├── vite.config.ts
+│       └── package.json
+├── turbo.json                     # Turborepo configuration
+├── biome.json                     # Linting/formatting rules
+├── pnpm-workspace.yaml            # Workspace configuration
+└── package.json                   # Root package scripts
 ```
 
-### Demo Structure
+## 🚀 Development Workflow
 
-```
-/
-├── public/
-│   └── index.html
-├── src/
-│   ├── demo.css
-│   └── index.js                   # Demo application
-├── package.json
-└── tsconfig.json
-```
+### Initial Setup
 
-## Setup Process
+```bash
+# Install pnpm globally (if not already installed)
+npm install -g pnpm
 
-### 1. Library Setup
-
-1. Initialize the library project:
-   ```bash
-   cd react-expose
-   npm init -y
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install --save react react-dom
-   npm install --save-dev typescript @types/react @types/react-dom rollup rollup-plugin-typescript2 rollup-plugin-css-only @rollup/plugin-node-resolve @rollup/plugin-commonjs rollup-plugin-terser
-   ```
-
-3. Configure TypeScript (`tsconfig.json`):
-   ```json
-   {
-     "compilerOptions": {
-       "target": "es5",
-       "module": "esnext",
-       "lib": ["dom", "dom.iterable", "esnext"],
-       "jsx": "react",
-       "declaration": true,
-       "declarationDir": "dist",
-       "sourceMap": true,
-       "outDir": "dist",
-       "strict": true,
-       "moduleResolution": "node",
-       "allowSyntheticDefaultImports": true,
-       "esModuleInterop": true,
-       "skipLibCheck": true,
-       "forceConsistentCasingInFileNames": true
-     },
-     "include": ["src"],
-     "exclude": ["node_modules", "dist"]
-   }
-   ```
-
-4. Configure Rollup (`rollup.config.js`):
-   ```javascript
-   import typescript from 'rollup-plugin-typescript2';
-   import { nodeResolve } from '@rollup/plugin-node-resolve';
-   import commonjs from '@rollup/plugin-commonjs';
-   import css from 'rollup-plugin-css-only';
-   import { terser } from 'rollup-plugin-terser';
-
-   export default {
-     input: 'src/index.ts',
-     output: [
-       {
-         file: 'dist/index.js',
-         format: 'cjs',
-         sourcemap: true
-       },
-       {
-         file: 'dist/index.esm.js',
-         format: 'esm',
-         sourcemap: true
-       }
-     ],
-     external: ['react', 'react-dom'],
-     plugins: [
-       nodeResolve(),
-       commonjs(),
-       css({ output: 'styles.css' }),
-       typescript({
-         useTsconfigDeclarationDir: true,
-         tsconfigOverride: {
-           exclude: ['**/*.test.ts', '**/*.test.tsx', 'node_modules']
-         }
-       }),
-       terser()
-     ]
-   };
-   ```
-
-5. Update `package.json`:
-   ```json
-   {
-     "name": "react-expose",
-     "version": "1.0.0",
-     "description": "macOS Mission Control and Exposé-like experiences for web applications",
-     "main": "dist/index.js",
-     "module": "dist/index.esm.js",
-     "types": "dist/index.d.ts",
-     "scripts": {
-       "build": "rollup -c",
-       "prepare": "npm run build"
-     },
-     "files": [
-       "dist"
-     ],
-     "peerDependencies": {
-       "react": ">=16.8.0",
-       "react-dom": ">=16.8.0"
-     },
-     "keywords": [
-       "react",
-       "mission-control",
-       "expose",
-       "ui",
-       "animation"
-     ],
-     "license": "MIT"
-   }
-   ```
-
-### 2. Demo Setup
-
-1. Install dependencies in the root folder:
-   ```bash
-   npm install --save react-expose
-   ```
-
-2. Link the local library for development:
-   ```bash
-   npm link ./react-expose
-   ```
-
-## Core Components
-
-### ExposeContext
-
-The `ExposeContext` provides state management for the Exposé functionality:
-
-```tsx
-// src/context/ExposeContext.tsx
-import React, { createContext, useContext, useState, useCallback } from 'react';
-
-interface ExposeContextType {
-  isActive: boolean;
-  activate: () => void;
-  deactivate: () => void;
-  registerWindow: (id: string, ref: React.RefObject<HTMLDivElement>) => void;
-  unregisterWindow: (id: string) => void;
-  windows: Map<string, React.RefObject<HTMLDivElement>>;
-  highlightedComponent: string | null;
-  setHighlightedComponent: (id: string | null) => void;
-}
-
-const ExposeContext = createContext<ExposeContextType>({
-  isActive: false,
-  activate: () => {},
-  deactivate: () => {},
-  registerWindow: () => {},
-  unregisterWindow: () => {},
-  windows: new Map(),
-  highlightedComponent: null,
-  setHighlightedComponent: () => {},
-});
-
-export const useExpose = () => useContext(ExposeContext);
-
-export const ExposeProvider = ({ 
-  children, 
-  shortcut = "Control+ArrowUp",
-  onActivate,
-  onDeactivate, 
-  blurAmount = 10 
-}) => {
-  const [isActive, setIsActive] = useState(false);
-  const [windows, setWindows] = useState<Map<string, React.RefObject<HTMLDivElement>>>(new Map());
-  const [highlightedComponent, setHighlightedComponent] = useState<string | null>(null);
-
-  // Implementation of methods...
-
-  return (
-    <ExposeContext.Provider
-      value={{
-        isActive,
-        activate,
-        deactivate,
-        registerWindow,
-        unregisterWindow,
-        windows,
-        highlightedComponent,
-        setHighlightedComponent,
-      }}
-    >
-      {children}
-    </ExposeContext.Provider>
-  );
-};
+# Clone and install dependencies
+git clone <repository>
+cd react-expose
+pnpm install
 ```
 
-### ExposeWrapper
+### Daily Development
 
-The `ExposeWrapper` component is used to wrap any element that should be included in the Exposé view:
+```bash
+# Start everything in watch mode
+pnpm dev
 
-```tsx
-// src/components/ExposeWrapper.tsx
-import React, { useRef, useEffect, useState } from 'react';
-import { useExpose } from '../context/ExposeContext';
-import { createUniqueId } from '../utils';
+# Or run specific packages
+pnpm dev:lib        # Library only
+pnpm dev:playground # Playground only
 
-interface ExposeWrapperProps {
-  children: React.ReactNode;
-  id?: string;
-  className?: string;
-  style?: React.CSSProperties;
-  label?: string;
-}
+# Run builds (with caching)
+pnpm build
 
-export const ExposeWrapper = ({
-  children,
-  id: propId,
-  className = "",
-  style = {},
-  label,
-}: ExposeWrapperProps) => {
-  // Generate a unique ID if none provided
-  const componentId = useRef(propId || createUniqueId());
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const { 
-    isActive, 
-    registerWindow, 
-    unregisterWindow, 
-    highlightedComponent,
-    setHighlightedComponent 
-  } = useExpose();
-
-  // Register/unregister this window with the Expose context
-  useEffect(() => {
-    registerWindow(componentId.current, wrapperRef);
-    return () => unregisterWindow(componentId.current);
-  }, [registerWindow, unregisterWindow]);
-
-  // Implementation of animation and layout effects...
-
-  return (
-    <div className="expose-container">
-      <div
-        ref={wrapperRef}
-        className={`expose-window ${isActive ? "expose-window-active" : ""} ${className}`}
-        onClick={isActive ? () => { /* Handle click during active expose */ } : undefined}
-        style={{
-          // Animation styles...
-        }}
-        data-expose-id={componentId.current}
-      >
-        {children}
-      </div>
-    </div>
-  );
-};
+# Lint and format
+pnpm lint:fix      # Auto-fix issues
+pnpm format        # Format code
 ```
 
-### ExposeTrigger
+### Testing & Quality
 
-The `ExposeTrigger` component handles keyboard shortcuts for activating the Exposé view:
+```bash
+# Type checking
+pnpm typecheck
 
-```tsx
-// src/components/ExposeTrigger.tsx
-import React, { useEffect } from 'react';
-import { useExpose } from '../context/ExposeContext';
+# Run tests (when implemented)
+pnpm test
 
-export const ExposeTrigger = () => {
-  const { isActive, activate, deactivate } = useExpose();
-  
-  useEffect(() => {
-    // Implement keyboard shortcut handling...
-    
-    return () => {
-      // Clean up event listeners...
-    };
-  }, [isActive, activate, deactivate]);
-  
-  return null; // This component doesn't render anything
-};
+# Check bundle size
+cd packages/react-expose && pnpm build
+# Check dist/ folder for sizes
 ```
 
-## API Reference
+## 🎯 MVP scope (what ships now)
 
-### Components
+- Activation: `ArrowUp` double-tap and `mod+E` to toggle Exposé.
+- Backdrop: tasteful scrim with optional blur (`blurAmount`), reduced-motion friendly.
+- ExposeWrapper: transform-based grid layout, border/label overlay, click to select → close + scroll + highlight pulse.
+- Accessibility: backdrop `role="dialog"` + `aria-modal`, focus trap, Arrow/Home/End navigation, Enter selects, Esc closes, visible focus ring.
+- Search MVP: simple input on backdrop filtering wrappers by `label`.
+- Playground demo + README showing minimal integration.
 
-#### `<ExposeProvider>`
+## 🚫 Non-goals for MVP
 
-The top-level component that enables Exposé functionality.
+- No DOM cloning/portals or cross-hierarchy reparenting.
+- No Framer Motion or spring physics.
+- No grouping, custom layouts, or masonry.
+- No fuzzy search/tags, analytics, DevTools, or theming system.
+- No advanced tests beyond lint/typecheck and manual QA in playground.
 
-Props:
-- `children`: React nodes to be wrapped
-- `shortcut`: Keyboard shortcut to activate Exposé (default: "Control+ArrowUp")
-- `onActivate`: Callback when Exposé is activated
-- `onDeactivate`: Callback when Exposé is deactivated
-- `blurAmount`: Amount of backdrop blur when in Exposé mode (default: 10px)
+## 🎨 UX/UI polish checklist
 
-#### `<ExposeWrapper>`
+- Smooth 160–240ms transforms; consistent easing.
+- Balanced grid spacing; stable z-index; neat labels and hover states.
+- Backdrop blur degrades to opacity when unsupported or reduced motion.
+- Keyboard-first usable; focus restored on close.
+- Works on Safari/Chromium/Firefox at typical grid sizes.
 
-Wrapper for elements that should be included in the Exposé view.
+## 📅 Next-week plan (3h/day, ~21h total)
 
-Props:
-- `children`: React nodes to be wrapped
-- `id`: Optional unique identifier (generated if not provided)
-- `className`: Additional CSS classes
-- `style`: Additional inline styles
-- `label`: Label to display when component is in Exposé mode
+Goal: Ship an MVP using the current animation system (CSS transforms + existing JS layout), with polished UX/UI and accessibility. No complex reparenting/portals, no Framer Motion.
 
-#### `<ExposeTrigger>`
+| Day | Focus | Tasks | Deliverable |
+| --- | --- | --- | --- |
+| Day 1 (3h) | Keyboard + activation | Unify shortcut handling in `ExposeProvider`; support `mod+E` and ArrowUp+ArrowUp; update playground/docs; keep `ExposeTrigger` as optional sugar only | Reliable activation across browsers; single source of truth |
+| Day 2 (3h) | Backdrop look & feel | Apply `blurAmount` via CSS var + `backdrop-filter` (with `-webkit-` fallback); refine scrim color/opacity; honor `prefers-reduced-motion` (reduced blur/durations) | Tunable, tasteful backdrop that degrades gracefully |
+| Day 3 (3h) | Grid tuning (current algo) | Tweak padding/spacing, column/row calc, and scale caps; smooth transitions; stable DOM-order; consistent z-index; polish tile hover/labels | Balanced layout with crisp timing and no jitter |
+| Day 4 (3h) | A11y shell | Backdrop gets `role="dialog"` + `aria-modal`; focus trap while active; restore focus on close; wrappers expose `aria-label` from `label` prop | Accessible modal-like overview |
+| Day 5 (3h) | Keyboard navigation | Roving focus between tiles with Arrow keys; Home/End jump; Enter selects; Esc closes; visible focus ring aligned with label/border | Full keyboard operability |
+| Day 6 (3h) | Search MVP | Simple input on backdrop; type-to-filter tiles by `label` (case-insensitive); integrate with keyboard nav on filtered set | Fast visual filtering without heavy infra |
+| Day 7 (3h) | Final polish & docs | Click-outside behavior; pointer/hover states; minor perf passes (throttle resize, coalesce rAF per wrapper); update README/playground and capture feedback checklist | Demo-quality MVP ready for user feedback |
 
-Optional component to add keyboard trigger functionality.
+Scope and constraints this week:
+- Stick to current transform-based approach; no DOM cloning/portals or cross-hierarchy reparenting.
+- Keep store shape largely as-is; avoid central transform maps—only light tuning and small helpers.
 
-### Hooks
+Risks and mitigations:
+- Safari blur/fixed quirks: test and use `-webkit-backdrop-filter`; fallback to opacity-only scrim.
+- Large grid perf: throttle resize handlers; avoid repeated layout thrash; reuse created overlay DOM nodes per wrapper.
 
-#### `useExpose()`
+---
 
-Hook for accessing Exposé context and functionality.
-
-Returns:
-- `isActive`: Boolean indicating if Exposé view is active
-- `activate`: Function to activate Exposé view
-- `deactivate`: Function to deactivate Exposé view
-- `highlightedComponent`: ID of currently highlighted component (if any)
-- `setHighlightedComponent`: Function to set highlighted component
-
-## Development Workflow
-
-1. Work on the library in the `react-expose` directory
-2. Build the library: `cd react-expose && npm run build`
-3. Test in the demo app: `npm start`
-
-## Release Process
-
-1. Update version number in `react-expose/package.json`
-2. Build the library: `cd react-expose && npm run build`
-3. Publish to npm: `cd react-expose && npm publish`
-
-## Testing
-
-Add tests using Jest and React Testing Library. Configure in the future iterations.
-
-## License
-
-MIT
+*This document is a living guide and will be updated as the project evolves.*

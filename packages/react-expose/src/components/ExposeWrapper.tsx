@@ -250,7 +250,7 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
       setAnimationStyles({
         transform: `translate(${finalTranslateX}px, ${finalTranslateY}px)`,
         scale: finalScale,
-        zIndex: 10000,
+        zIndex: 100001,
       });
 
       // Update border container and its children
@@ -278,7 +278,7 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
         borderRef.current.style.top = `${Math.round(visualCenterY - containerHeight / 2)}px`;
         borderRef.current.style.position = "fixed";
         borderRef.current.style.pointerEvents = "none";
-        borderRef.current.style.zIndex = "10001";
+        borderRef.current.style.zIndex = "100002";
         borderRef.current.style.overflow = "visible";
 
         // Style the border overlay
@@ -330,7 +330,7 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
           labelElem.style.whiteSpace = "nowrap";
           labelElem.style.transition = "opacity 0.2s ease";
           labelElem.style.pointerEvents = "none";
-          labelElem.style.zIndex = "10002"; // Higher than container
+          labelElem.style.zIndex = "100003"; // Higher than container
         }
       }
     };
@@ -372,7 +372,7 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
   }, [isActive, label]);
 
   return (
-    <div className="expose-container" style={{ position: "relative", zIndex: isActive ? 10000 : "auto" }}>
+    <div className="expose-container" style={{ position: "relative", zIndex: isActive ? 100000 : "auto" }}>
       <div
         ref={wrapperRef}
         className={`expose-window ${isActive ? "expose-window-active" : ""} ${highlightedComponent === componentId.current ? "expose-window-highlighted" : ""} ${className}`}
