@@ -1,13 +1,15 @@
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
-import { ThemeProvider } from "@/components/theme-provider"
 import "./globals.css"
 
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["300", "400", "500"],
+})
 
 export const metadata: Metadata = {
-  title: "React Exposé - Beautiful macOS-like UI Components",
-  description: "A React library for creating stunning macOS Mission Control and Exposé-like experiences in your web applications",
+  title: "react-expose",
+  description: "Mission Control for React",
 }
 
 export default function RootLayout({
@@ -16,16 +18,9 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en">
       <body className={inter.className}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-        </ThemeProvider>
+        {children}
       </body>
     </html>
   )
