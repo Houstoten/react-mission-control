@@ -6,6 +6,7 @@ export interface ExposeProviderProps {
   onActivate?: () => void;
   onDeactivate?: () => void;
   blurAmount?: number;
+  ariaLabel?: string;
 }
 
 export interface ExposeWrapperProps {

@@ -1,5 +1,6 @@
 import type React from "react";
-import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   useExposeActions,
   useExposeBorderWidth,
@@ -25,6 +26,26 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
   // Store calculated transform and scale for this window
   const [animationStyles, setAnimationStyles] = useState<AnimationStyles | null>(null);
 
+  // Hover state for border overlay (replaces imperative event listeners)
+  const [isHovered, setIsHovered] = useState(false);
+
+  // Border position state for the portal
+  const [borderPosition, setBorderPosition] = useState<{
+    width: number;
+    height: number;
+    left: number;
+    top: number;
+  } | null>(null);
+
+  // Store last known rect before activation (for portal positioning)
+  const lastRectRef = useRef<DOMRect | null>(null);
+
+  // Store original dimensions for the placeholder
+  const [placeholderSize, setPlaceholderSize] = useState<{
+    width: number;
+    height: number;
+  } | null>(null);
+
   // Use Zustand hooks
   const isActive = useIsExposeActive();
   const borderWidth = useExposeBorderWidth();
@@ -47,117 +68,17 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
     };
   }, [registerWindow, unregisterWindow]);
 
-  // Reference for the border overlay
-  const borderRef = useRef<HTMLDivElement | null>(null);
-
-  // Handle hover state for border element
+  // Track the element's rect when not active
+  // so we know where to position the portal when expose activates
   useLayoutEffect(() => {
-    if (!isActive) return;
-
-    // Create border overlay container if it doesn't exist
-    if (!borderRef.current) {
-      const borderContainer = document.createElement("div");
-      borderContainer.className = "expose-window-border-container";
-
-      const borderElem = document.createElement("div");
-      borderElem.className = "expose-window-border-overlay";
-
-      // Create label element at the same level as the border
-      const labelElem = document.createElement("div");
-      labelElem.className = "expose-window-label";
-      labelElem.style.opacity = "0"; // Initially hidden
-
-      // Append both elements to the container
-      borderContainer.appendChild(borderElem);
-      borderContainer.appendChild(labelElem);
-
-      document.body.appendChild(borderContainer);
-      borderRef.current = borderContainer;
-
-      // Add handlers for hover
-      const handleMouseEnter = () => {
-        if (borderRef.current) {
-          // Add hover class and directly set border color
-          const borderOverlay = borderRef.current.querySelector(
-            ".expose-window-border-overlay",
-          ) as HTMLElement;
-          if (borderOverlay) {
-            borderOverlay.classList.add("hover");
-            borderOverlay.style.borderColor = "rgba(64, 156, 255, 0.85)";
-          }
-
-          // Show the label on hover
-          const labelEl = borderRef.current.querySelector(".expose-window-label");
-          if (labelEl) (labelEl as HTMLElement).style.opacity = "1";
-        }
-      };
-
-      const handleMouseLeave = () => {
-        if (borderRef.current) {
-          // Remove hover class and set transparent border
-          const borderOverlay = borderRef.current.querySelector(
-            ".expose-window-border-overlay",
-          ) as HTMLElement;
-          if (borderOverlay) {
-            borderOverlay.classList.remove("hover");
-            borderOverlay.style.borderColor = "transparent";
-          }
-
-          // Hide the label when not hovering
-          const labelEl = borderRef.current.querySelector(".expose-window-label");
-          if (labelEl) (labelEl as HTMLElement).style.opacity = "0";
-        }
-      };
-
-      if (wrapperRef.current) {
-        wrapperRef.current.addEventListener("mouseenter", handleMouseEnter);
-        wrapperRef.current.addEventListener("mouseleave", handleMouseLeave);
-      }
+    if (!isActive && wrapperRef.current) {
+      const rect = wrapperRef.current.getBoundingClientRect();
+      lastRectRef.current = rect;
+      setPlaceholderSize((prev) => {
+        if (prev && prev.width === rect.width && prev.height === rect.height) return prev;
+        return { width: rect.width, height: rect.height };
+      });
     }
-
-    return () => {
-      // Clean up the container and all its children
-      if (borderRef.current) {
-        document.body.removeChild(borderRef.current);
-        borderRef.current = null;
-      }
-
-      if (wrapperRef.current) {
-        // Remove event listeners properly with named functions
-        const handleMouseEnter = () => {
-          if (borderRef.current) {
-            // Add hover class and directly set border color
-            const borderOverlay = borderRef.current.querySelector(
-              ".expose-window-border-overlay",
-            ) as HTMLElement;
-            if (borderOverlay) {
-              borderOverlay.classList.add("hover");
-              borderOverlay.style.borderColor = "rgba(64, 156, 255, 0.85)";
-            }
-            const labelEl = borderRef.current.querySelector(".expose-window-label");
-            if (labelEl) (labelEl as HTMLElement).style.opacity = "1";
-          }
-        };
-
-        const handleMouseLeave = () => {
-          if (borderRef.current) {
-            // Remove hover class and set transparent border
-            const borderOverlay = borderRef.current.querySelector(
-              ".expose-window-border-overlay",
-            ) as HTMLElement;
-            if (borderOverlay) {
-              borderOverlay.classList.remove("hover");
-              borderOverlay.style.borderColor = "transparent";
-            }
-            const labelEl = borderRef.current.querySelector(".expose-window-label");
-            if (labelEl) (labelEl as HTMLElement).style.opacity = "0";
-          }
-        };
-
-        wrapperRef.current.removeEventListener("mouseenter", handleMouseEnter);
-        wrapperRef.current.removeEventListener("mouseleave", handleMouseLeave);
-      }
-    };
   }, [isActive]);
 
   // Handle scroll events to detect when scroll has ended
@@ -177,6 +98,13 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
     return undefined;
   }, [highlightedComponent, setHighlightedComponent]);
 
+  // Reset hover state when expose deactivates
+  useEffect(() => {
+    if (!isActive) {
+      setIsHovered(false);
+    }
+  }, [isActive]);
+
   // Calculate and store animation properties
   useLayoutEffect(() => {
     if (!wrapperRef.current || !isActive) {
@@ -185,6 +113,8 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
         cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
       }
+      setAnimationStyles(null);
+      setBorderPosition(null);
       return;
     }
 
@@ -193,6 +123,7 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
       if (!wrapperRef.current) return;
 
       const element = wrapperRef.current;
+      // When portaled, use getBoundingClientRect which gives viewport coords
       const rect = element.getBoundingClientRect();
 
       // Get viewport dimensions
@@ -253,86 +184,28 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
         zIndex: 100001,
       });
 
-      // Update border container and its children
-      if (borderRef.current) {
-        const visualWidth = rect.width * finalScale;
-        const visualHeight = rect.height * finalScale;
-        const visualCenterX = currentCenterX + finalTranslateX;
-        const visualCenterY = currentCenterY + finalTranslateY;
+      // Calculate border position for the portal
+      const visualWidth = rect.width * finalScale;
+      const visualHeight = rect.height * finalScale;
+      const visualCenterX = currentCenterX + finalTranslateX;
+      const visualCenterY = currentCenterY + finalTranslateY;
 
-        const borderOffset = Math.max(
-          4, // min offset
-          Math.min(12, 14 * (1 - finalScale)), // max offset
-        );
+      const borderOffset = Math.max(
+        4, // min offset
+        Math.min(12, 14 * (1 - finalScale)), // max offset
+      );
 
-        const scaledVisualWidth = visualWidth * 0.97;
-        const scaledVisualHeight = visualHeight * 0.97;
-        const containerWidth = scaledVisualWidth + borderOffset * 2;
-        const containerHeight = scaledVisualHeight + borderOffset * 2;
+      const scaledVisualWidth = visualWidth * 0.97;
+      const scaledVisualHeight = visualHeight * 0.97;
+      const containerWidth = scaledVisualWidth + borderOffset * 2;
+      const containerHeight = scaledVisualHeight + borderOffset * 2;
 
-        // Position the container
-        borderRef.current.style.transform = "none";
-        borderRef.current.style.width = `${containerWidth}px`;
-        borderRef.current.style.height = `${containerHeight}px`;
-        borderRef.current.style.left = `${Math.round(visualCenterX - containerWidth / 2)}px`;
-        borderRef.current.style.top = `${Math.round(visualCenterY - containerHeight / 2)}px`;
-        borderRef.current.style.position = "fixed";
-        borderRef.current.style.pointerEvents = "none";
-        borderRef.current.style.zIndex = "100002";
-        borderRef.current.style.overflow = "visible";
-
-        // Style the border overlay
-        const borderOverlay = borderRef.current.querySelector(
-          ".expose-window-border-overlay",
-        ) as HTMLElement;
-        if (borderOverlay) {
-          borderOverlay.style.position = "absolute";
-          borderOverlay.style.top = "0";
-          borderOverlay.style.left = "0";
-          borderOverlay.style.width = "100%";
-          borderOverlay.style.height = "100%";
-          borderOverlay.style.borderWidth = `${borderWidth}px`;
-          borderOverlay.style.borderStyle = "solid";
-          borderOverlay.style.borderColor = "transparent"; // Initial transparent border
-          borderOverlay.style.borderRadius = "6px";
-          borderOverlay.style.boxSizing = "border-box";
-          borderOverlay.style.pointerEvents = "none";
-
-          // Explicitly set transition for border-color
-          borderOverlay.style.transition = "border-color 0.2s ease";
-
-          // Make sure hover class correctly sets the border color
-          if (borderOverlay.classList.contains("hover")) {
-            borderOverlay.style.borderColor = "rgba(64, 156, 255, 0.85)";
-          }
-        }
-
-        // Position the label
-        const labelElem = borderRef.current.querySelector(".expose-window-label") as HTMLElement;
-        if (labelElem && label) {
-          labelElem.textContent = label;
-          labelElem.style.position = "absolute";
-          labelElem.style.bottom = "-30px";
-          labelElem.style.left = "50%";
-          labelElem.style.transform = "translateX(-50%)";
-          labelElem.style.height = "auto";
-          labelElem.style.minHeight = "fit-content";
-          labelElem.style.maxWidth = "none";
-          labelElem.style.display = "flex";
-          labelElem.style.alignItems = "center";
-          labelElem.style.justifyContent = "center";
-          labelElem.style.backgroundColor = "rgba(0, 0, 0, 0.75)";
-          labelElem.style.color = "white";
-          labelElem.style.padding = "4px 8px";
-          labelElem.style.borderRadius = "4px";
-          labelElem.style.fontSize = "12px";
-          labelElem.style.fontWeight = "bold";
-          labelElem.style.whiteSpace = "nowrap";
-          labelElem.style.transition = "opacity 0.2s ease";
-          labelElem.style.pointerEvents = "none";
-          labelElem.style.zIndex = "100003"; // Higher than container
-        }
-      }
+      setBorderPosition({
+        width: containerWidth,
+        height: containerHeight,
+        left: Math.round(visualCenterX - containerWidth / 2),
+        top: Math.round(visualCenterY - containerHeight / 2),
+      });
     };
 
     // Run immediately once for initial positioning
@@ -357,89 +230,192 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
     };
   }, [isActive, borderWidth, label]);
 
-  // Handle label text updates
-  useEffect(() => {
-    // Only update label when in expose mode with a valid label
-    if (isActive && label && borderRef.current) {
-      // Get label element that's already created as a sibling to border
-      const labelElem = borderRef.current.querySelector(".expose-window-label");
+  const handleClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (!isActive) return;
+      e.stopPropagation();
 
-      if (labelElem) {
-        // Update label text
-        labelElem.textContent = label;
+      const exposeId = componentId.current;
+
+      // Deactivate expose mode
+      setActive(false);
+
+      // Set this component as highlighted
+      setHighlightedComponent(exposeId);
+
+      // After DOM settles (portal removed, scroll restored), scroll the element into view
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          const el = document.querySelector(`[data-expose-id="${exposeId}"]`);
+          if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        }, 100);
+      });
+    },
+    [isActive, setActive, setHighlightedComponent],
+  );
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (!isActive) return;
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        handleClick(e as unknown as React.MouseEvent);
       }
-    }
-  }, [isActive, label]);
+    },
+    [isActive, handleClick],
+  );
+
+  const handleMouseEnter = useCallback(() => {
+    if (isActive) setIsHovered(true);
+  }, [isActive]);
+
+  const handleMouseLeave = useCallback(() => {
+    if (isActive) setIsHovered(false);
+  }, [isActive]);
+
+  // The window element (shared between normal and portaled rendering)
+  const windowElement = (
+    <div
+      ref={wrapperRef}
+      className={`expose-window ${isActive ? "expose-window-active" : ""} ${highlightedComponent === componentId.current ? "expose-window-highlighted" : ""} ${className}`}
+      onClick={isActive ? handleClick : undefined}
+      onKeyDown={isActive ? handleKeyDown : undefined}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      role={isActive ? "button" : undefined}
+      tabIndex={isActive ? 0 : undefined}
+      aria-label={isActive ? (label || "Exposed window") : undefined}
+      style={{
+        ...style,
+        ...(isActive && lastRectRef.current
+          ? {
+              // When portaled to body, use fixed positioning at original location
+              position: "fixed" as const,
+              left: lastRectRef.current.left,
+              top: lastRectRef.current.top,
+              width: lastRectRef.current.width,
+              height: lastRectRef.current.height,
+            }
+          : {
+              width: "100%",
+              height: "100%",
+            }),
+        transition:
+          "transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease",
+        transformOrigin: "center center",
+        willChange:
+          isActive || highlightedComponent === componentId.current
+            ? "transform, opacity, filter"
+            : "auto",
+        zIndex:
+          animationStyles && isActive
+            ? animationStyles.zIndex
+            : highlightedComponent === componentId.current
+              ? 1000
+              : "auto",
+        transform:
+          animationStyles && isActive
+            ? `translate(${animationStyles.transform.match(/translate\((.*?)px,/)?.[1] || 0}px, ${animationStyles.transform.match(/px,\s*(.*?)px\)/)?.[1] || 0}px) scale(${animationStyles?.scale || 1})`
+            : "none",
+        background: isActive ? undefined : "transparent",
+        boxShadow: isActive
+          ? undefined
+          : highlightedComponent === componentId.current
+            ? "0 0 0 4px rgba(64, 156, 255, 0.7), 0 5px 20px rgba(0, 0, 0, 0.2)"
+            : "none",
+        pointerEvents: "auto",
+        filter: highlightedComponent === componentId.current ? "none" : "blur(0px)",
+      }}
+      data-expose-id={componentId.current}
+      data-scale={animationStyles?.scale || 1}
+      data-highlighted={highlightedComponent === componentId.current ? "true" : "false"}
+    >
+      {children}
+    </div>
+  );
 
   return (
-    <div className="expose-container" style={{ position: "relative", zIndex: isActive ? 100000 : "auto" }}>
+    <>
       <div
-        ref={wrapperRef}
-        className={`expose-window ${isActive ? "expose-window-active" : ""} ${highlightedComponent === componentId.current ? "expose-window-highlighted" : ""} ${className}`}
-        onClick={
-          isActive
-            ? (e) => {
-                e.stopPropagation();
-                if (wrapperRef.current) {
-                  // Deactivate expose mode
-                  setActive(false);
-
-                  // Set this component as highlighted
-                  setHighlightedComponent(componentId.current);
-
-                  // Use requestAnimationFrame for smoother scrolling after transition
-                  requestAnimationFrame(() => {
-                    setTimeout(() => {
-                      if (!wrapperRef.current) return;
-                      const rect = wrapperRef.current.getBoundingClientRect();
-                      // Calculate position relative to the document with a small margin
-                      const scrollY = window.scrollY + rect.top - 50;
-                      window.scrollTo({
-                        top: scrollY,
-                        behavior: "smooth",
-                      });
-                    }, 200); // Match transition time
-                  });
-                }
-              }
-            : undefined
-        }
+        className="expose-container"
         style={{
-          ...style,
-          transition:
-            "transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease",
-          transformOrigin: "center center",
-          willChange:
-            isActive || highlightedComponent === componentId.current
-              ? "transform, opacity, filter"
-              : "auto",
-          zIndex:
-            animationStyles && isActive
-              ? animationStyles.zIndex
-              : highlightedComponent === componentId.current
-                ? 1000
-                : "auto",
-          transform:
-            animationStyles && isActive
-              ? `translate(${animationStyles.transform.match(/translate\((.*?)px,/)?.[1] || 0}px, ${animationStyles.transform.match(/px,\s*(.*?)px\)/)?.[1] || 0}px) scale(${animationStyles?.scale || 1})`
-              : "none",
-          background: isActive ? undefined : "transparent",
-          boxShadow: isActive
-            ? undefined
-            : highlightedComponent === componentId.current
-              ? "0 0 0 4px rgba(64, 156, 255, 0.7), 0 5px 20px rgba(0, 0, 0, 0.2)"
-              : "none",
-          width: "100%",
-          height: "100%",
-          pointerEvents: "auto",
-          filter: highlightedComponent === componentId.current ? "none" : "blur(0px)",
+          position: "relative",
+          zIndex: isActive ? 100000 : "auto",
+          // When active, maintain original size as placeholder to prevent layout shift
+          ...(isActive && placeholderSize
+            ? {
+                width: placeholderSize.width,
+                height: placeholderSize.height,
+              }
+            : {}),
         }}
-        data-expose-id={componentId.current}
-        data-scale={animationStyles?.scale || 1}
-        data-highlighted={highlightedComponent === componentId.current ? "true" : "false"}
       >
-        {children}
+        {/* When active, portal the window to body so it escapes the blurred #__next */}
+        {isActive ? createPortal(windowElement, document.body) : windowElement}
       </div>
-    </div>
+
+      {/* Border overlay via React Portal */}
+      {isActive &&
+        borderPosition &&
+        createPortal(
+          <div
+            className="expose-window-border-container"
+            style={{
+              position: "fixed",
+              pointerEvents: "none",
+              zIndex: 100002,
+              overflow: "visible",
+              boxSizing: "border-box",
+              width: `${borderPosition.width}px`,
+              height: `${borderPosition.height}px`,
+              left: `${borderPosition.left}px`,
+              top: `${borderPosition.top}px`,
+            }}
+          >
+            <div
+              className={`expose-window-border-overlay ${isHovered ? "hover" : ""}`}
+              style={{
+                borderWidth: `${borderWidth}px`,
+                borderStyle: "solid",
+                borderColor: isHovered ? "rgba(64, 156, 255, 0.85)" : "transparent",
+                borderRadius: "6px",
+              }}
+            />
+            {label && (
+              <div
+                className="expose-window-label"
+                style={{
+                  opacity: isHovered ? 1 : 0,
+                  position: "absolute",
+                  bottom: "-30px",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  height: "auto",
+                  minHeight: "fit-content",
+                  maxWidth: "none",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: "rgba(0, 0, 0, 0.75)",
+                  color: "white",
+                  padding: "4px 8px",
+                  borderRadius: "4px",
+                  fontSize: "12px",
+                  fontWeight: "bold",
+                  whiteSpace: "nowrap",
+                  transition: "opacity 0.2s ease",
+                  pointerEvents: "none",
+                  zIndex: 100003,
+                }}
+              >
+                {label}
+              </div>
+            )}
+          </div>,
+          document.body,
+        )}
+    </>
   );
 };

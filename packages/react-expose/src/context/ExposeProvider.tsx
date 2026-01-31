@@ -1,5 +1,6 @@
 import type React from "react";
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useIsExposeActive, useExposeActions } from "../store/exposeStore";
 
 interface ExposeProviderProps {
@@ -8,18 +9,25 @@ interface ExposeProviderProps {
   onActivate?: () => void;
   onDeactivate?: () => void;
   blurAmount?: number;
+  ariaLabel?: string;
 }
 
 export const ExposeProvider: React.FC<ExposeProviderProps> = ({
   children,
-  shortcut = "Control+ArrowUp",
+  shortcut = "ArrowUp+ArrowUp",
   onActivate,
   onDeactivate,
   blurAmount = 10,
+  ariaLabel,
 }) => {
   const lastKeyPressRef = useRef<number>(0);
+  const previousFocusRef = useRef<Element | null>(null);
   const isActive = useIsExposeActive();
   const { activate, deactivate, setConfig, updateBorderWidthForScreen } = useExposeActions();
+
+  // State to manage backdrop mount/unmount with exit animation
+  const [backdropMounted, setBackdropMounted] = useState(false);
+  const [backdropVisible, setBackdropVisible] = useState(false);
 
   // Initialize and update configuration
   useEffect(() => {
@@ -48,7 +56,7 @@ export const ExposeProvider: React.FC<ExposeProviderProps> = ({
           e.preventDefault();
           const now = Date.now();
           const timeSinceLastPress = now - lastKeyPressRef.current;
-          
+
           // If the last press was within 300ms, activate
           if (timeSinceLastPress < 300) {
             activate();
@@ -97,111 +105,309 @@ export const ExposeProvider: React.FC<ExposeProviderProps> = ({
     };
   }, [isActive, activate, deactivate, shortcut]);
 
-  // Create backdrop element when Expose is active
+  // Manage backdrop mount/visible state for enter/exit animations
+  useEffect(() => {
+    if (isActive) {
+      setBackdropMounted(true);
+      // Delay visibility to next frame so CSS transition triggers
+      const rafId = requestAnimationFrame(() => {
+        setBackdropVisible(true);
+      });
+      return () => cancelAnimationFrame(rafId);
+    }
+
+    setBackdropVisible(false);
+    // Wait for exit animation before unmounting
+    const timer = setTimeout(() => {
+      setBackdropMounted(false);
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [isActive]);
+
+  // Strip ancestor stacking contexts so expose windows can escape them
+  // and compete at the root stacking level (above backdrop z-index 9999).
+  // Uses !important to override CSS animation fill-mode values.
+  useLayoutEffect(() => {
+    if (!isActive) return undefined;
+
+    // Properties that create stacking contexts, mapped to their neutral value
+    const propsToStrip: Array<[string, string, (c: CSSStyleDeclaration) => boolean]> = [
+      ["z-index", "auto", (c) => c.zIndex !== "auto" && c.position !== "static"],
+      ["transform", "none", (c) => c.transform !== "none"],
+      ["filter", "none", (c) => c.filter !== "none"],
+      ["opacity", "1", (c) => c.opacity !== "1"],
+      ["will-change", "auto", (c) => c.willChange !== "auto"],
+      ["isolation", "auto", (c) => c.isolation === "isolate"],
+      ["mix-blend-mode", "normal", (c) => c.mixBlendMode !== "normal"],
+      ["perspective", "none", (c) => c.perspective !== "none"],
+      ["clip-path", "none", (c) => c.clipPath !== "none"],
+      ["contain", "none", (c) => c.contain !== "none"],
+      [
+        "backdrop-filter",
+        "none",
+        (c) => {
+          const v =
+            c.getPropertyValue("backdrop-filter") ||
+            c.getPropertyValue("-webkit-backdrop-filter");
+          return !!v && v !== "none";
+        },
+      ],
+      // CSS animations with transform/opacity create stacking contexts and
+      // animation fill-mode:forwards overrides normal inline styles
+      ["animation", "none", (c) => c.animationName !== "none" && c.animationName !== ""],
+    ];
+
+    type SavedProp = { prop: string; value: string; priority: string };
+    type SavedEntry = { element: HTMLElement; props: SavedProp[] };
+
+    const savedEntries: SavedEntry[] = [];
+    const visited = new Set<HTMLElement>();
+
+    const windows = document.querySelectorAll<HTMLElement>(".expose-window");
+
+    for (const win of windows) {
+      let ancestor = win.parentElement;
+
+      while (ancestor && ancestor !== document.body && ancestor !== document.documentElement) {
+        if (visited.has(ancestor)) {
+          ancestor = ancestor.parentElement;
+          continue;
+        }
+        visited.add(ancestor);
+
+        // Skip our own expose elements
+        if (
+          ancestor.classList.contains("expose-container") ||
+          ancestor.classList.contains("expose-backdrop") ||
+          ancestor.id === "expose-backdrop-portal"
+        ) {
+          ancestor = ancestor.parentElement;
+          continue;
+        }
+
+        const computed = getComputedStyle(ancestor);
+        const entry: SavedEntry = { element: ancestor, props: [] };
+
+        for (const [prop, neutralValue, shouldStrip] of propsToStrip) {
+          if (shouldStrip(computed)) {
+            // Save current inline value and priority
+            entry.props.push({
+              prop,
+              value: ancestor.style.getPropertyValue(prop),
+              priority: ancestor.style.getPropertyPriority(prop),
+            });
+            // Use !important to beat CSS animation fill-mode values
+            ancestor.style.setProperty(prop, neutralValue, "important");
+
+            // Also handle webkit prefix for backdrop-filter
+            if (prop === "backdrop-filter") {
+              entry.props.push({
+                prop: "-webkit-backdrop-filter",
+                value: ancestor.style.getPropertyValue("-webkit-backdrop-filter"),
+                priority: ancestor.style.getPropertyPriority("-webkit-backdrop-filter"),
+              });
+              ancestor.style.setProperty("-webkit-backdrop-filter", neutralValue, "important");
+            }
+          }
+        }
+
+        if (entry.props.length > 0) {
+          savedEntries.push(entry);
+        }
+
+        ancestor = ancestor.parentElement;
+      }
+    }
+
+    return () => {
+      for (const { element, props } of savedEntries) {
+        for (const { prop, value, priority } of props) {
+          if (value) {
+            element.style.setProperty(prop, value, priority);
+          } else {
+            element.style.removeProperty(prop);
+          }
+        }
+      }
+    };
+  }, [isActive]);
+
+  // Apply blur to the app content by blurring body's direct children
+  // (except expose windows and our own elements). Also disable pointer events
+  // on blurred content so only expose windows and backdrop are interactive.
+  useLayoutEffect(() => {
+    if (!isActive) return undefined;
+
+    const blurredElements: {
+      element: HTMLElement;
+      savedFilter: string;
+      savedTransition: string;
+      savedPointerEvents: string;
+    }[] = [];
+
+    for (const child of document.body.children) {
+      if (!(child instanceof HTMLElement)) continue;
+      // Skip expose windows (portaled), border containers, and backdrop
+      if (
+        child.classList.contains("expose-window") ||
+        child.classList.contains("expose-window-border-container") ||
+        child.classList.contains("expose-backdrop")
+      ) {
+        continue;
+      }
+
+      blurredElements.push({
+        element: child,
+        savedFilter: child.style.filter,
+        savedTransition: child.style.transition,
+        savedPointerEvents: child.style.pointerEvents,
+      });
+      child.style.transition = "filter 0.3s ease";
+      child.style.filter = `blur(${blurAmount}px)`;
+      child.style.pointerEvents = "none";
+    }
+
+    return () => {
+      for (const { element, savedFilter, savedTransition, savedPointerEvents } of blurredElements) {
+        element.style.filter = savedFilter;
+        element.style.transition = savedTransition;
+        element.style.pointerEvents = savedPointerEvents;
+      }
+    };
+  }, [isActive, blurAmount]);
+
+  // Scroll locking when expose is active
   useLayoutEffect(() => {
     if (!isActive) {
       return undefined;
     }
 
-    const backdropRef = { current: null as HTMLDivElement | null };
-    const portalRef = { current: null as HTMLDivElement | null };
-    let animationFrameId: number | null = null;
-    let animationEndTimer: number | null = null;
+    // Store current scroll position
+    const scrollY = window.scrollY;
 
-    // Create backdrop with requestAnimationFrame for smoother animation
-    animationFrameId = requestAnimationFrame(() => {
-      // Check if a backdrop already exists
-      const existingBackdrop = document.getElementById("expose-backdrop-main");
-      if (existingBackdrop) {
-        // If backdrop already exists, just return
-        backdropRef.current = existingBackdrop as HTMLDivElement;
-        return;
-      }
-
-      // Create backdrop overlay
-      const backdrop = document.createElement("div");
-      backdropRef.current = backdrop;
-      backdrop.id = "expose-backdrop-main";
-      backdrop.className = "expose-backdrop";
-      backdrop.style.position = "fixed";
-      backdrop.style.top = "0";
-      backdrop.style.left = "0";
-      backdrop.style.width = "100vw";
-      backdrop.style.height = "100vh";
-      backdrop.style.backgroundColor = "rgba(0, 0, 0, 0.5)"; // Dark overlay
-      backdrop.style.opacity = "0"; // Start with 0 opacity
-      backdrop.style.zIndex = "9999"; // High z-index for backdrop
-      backdrop.style.transition = "opacity 0.2s ease";
-
-      // Add click handler to close on backdrop click
-      backdrop.addEventListener("click", deactivate);
-      
-      // Insert backdrop as first child of body to ensure it's below all other elements
-      if (document.body.firstChild) {
-        document.body.insertBefore(backdrop, document.body.firstChild);
-      } else {
-        document.body.appendChild(backdrop);
-      }
-
-      // Store current scroll position
-      const scrollY = window.scrollY;
-
-      // Prevent scrolling by fixing the body position
-      document.body.style.position = "fixed";
-      document.body.style.top = `-${scrollY}px`;
-      document.body.style.width = "100%";
-      document.body.style.overflowY = "scroll"; // Prevents layout shift
-
-      // Animate in
-      requestAnimationFrame(() => {
-        if (backdrop) backdrop.style.opacity = "1";
-      });
-    });
+    // Prevent scrolling by fixing the body position
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = "100%";
+    document.body.style.overflowY = "scroll"; // Prevents layout shift
 
     return () => {
-      // Clean up animation frame if component unmounts before it runs
-      if (animationFrameId !== null) {
-        cancelAnimationFrame(animationFrameId);
-      }
-
-      // Find and remove the backdrop
-      const backdrop = document.getElementById("expose-backdrop-main");
-      if (backdrop) {
-        // Animate out
-        backdrop.style.opacity = "0";
-        
-        // Remove after animation
-        setTimeout(() => {
-          if (backdrop.parentNode) {
-            backdrop.parentNode.removeChild(backdrop);
-          }
-        }, 200);
-      }
-      
-      // Also clean up any stray backdrops (for safety)
-      const allBackdrops = document.querySelectorAll(".expose-backdrop");
-      allBackdrops.forEach((bd) => {
-        if (bd instanceof HTMLElement && bd.id !== "expose-backdrop-main") {
-          bd.remove();
-        }
-      });
-
       // Restore scrolling and position
-      const scrollY = parseInt(document.body.style.top || "0", 10) * -1;
+      const savedScrollY = parseInt(document.body.style.top || "0", 10) * -1;
       document.body.style.position = "";
       document.body.style.top = "";
       document.body.style.width = "";
       document.body.style.overflowY = "";
 
-      // Restore scroll position
-      window.scrollTo(0, scrollY);
-
-      // Clean up any remaining timeout
-      if (animationEndTimer !== null) {
-        window.clearTimeout(animationEndTimer);
-      }
+      // Restore scroll position instantly (not smoothly).
+      // Pages with `html { scroll-behavior: smooth }` would otherwise
+      // animate from 0 to savedScrollY, causing a visible scroll-from-top.
+      window.scrollTo({ top: savedScrollY, behavior: "instant" });
     };
-  }, [isActive, deactivate, blurAmount]);
+  }, [isActive]);
 
-  return <>{children}</>;
+  // Focus management + focus trapping
+  useEffect(() => {
+    if (isActive) {
+      // Store currently focused element
+      previousFocusRef.current = document.activeElement;
+
+      // Focus the first exposed window after layout settles
+      requestAnimationFrame(() => {
+        const firstWindow = document.querySelector(".expose-window-active") as HTMLElement;
+        if (firstWindow) {
+          firstWindow.focus();
+        }
+      });
+
+      // Focus trap: constrain Tab/Shift+Tab to exposed windows only
+      const handleFocusTrap = (e: KeyboardEvent) => {
+        if (e.key !== "Tab") return;
+
+        const focusableWindows = Array.from(
+          document.querySelectorAll<HTMLElement>(".expose-window-active[tabindex]"),
+        );
+        if (focusableWindows.length === 0) return;
+
+        const currentIndex = focusableWindows.indexOf(document.activeElement as HTMLElement);
+
+        e.preventDefault();
+        if (e.shiftKey) {
+          // Move backward
+          const prevIndex = currentIndex <= 0 ? focusableWindows.length - 1 : currentIndex - 1;
+          focusableWindows[prevIndex].focus();
+        } else {
+          // Move forward
+          const nextIndex = currentIndex >= focusableWindows.length - 1 ? 0 : currentIndex + 1;
+          focusableWindows[nextIndex].focus();
+        }
+      };
+
+      window.addEventListener("keydown", handleFocusTrap);
+
+      return () => {
+        window.removeEventListener("keydown", handleFocusTrap);
+      };
+    }
+
+    // Restore focus to previously focused element
+    if (previousFocusRef.current instanceof HTMLElement) {
+      previousFocusRef.current.focus();
+    }
+    previousFocusRef.current = null;
+    return undefined;
+  }, [isActive]);
+
+  // Dismiss expose when clicking anywhere outside an expose window.
+  // Uses a document-level capture listener for reliability regardless of z-index stacking.
+  useEffect(() => {
+    if (!isActive) return undefined;
+
+    const handleDocumentClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      // If clicked on an expose window or inside one, let the window's handler deal with it
+      if (target.closest(".expose-window")) return;
+      // Clicked outside any expose window — dismiss
+      deactivate();
+    };
+
+    // Use capture phase so we intercept before anything else, with a small delay
+    // to avoid catching the activation click itself
+    const timer = setTimeout(() => {
+      document.addEventListener("click", handleDocumentClick, true);
+    }, 50);
+
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("click", handleDocumentClick, true);
+    };
+  }, [isActive, deactivate]);
+
+  return (
+    <>
+      {children}
+
+      {/* ARIA live region — always rendered, visually hidden */}
+      <div aria-live="polite" aria-atomic="true" className="expose-sr-only">
+        {isActive ? "Exposé view activated" : ""}
+      </div>
+
+      {/* Backdrop via React Portal — appended to body, paints above blurred app content */}
+      {backdropMounted &&
+        createPortal(
+          <div
+            id="expose-backdrop-main"
+            className="expose-backdrop"
+            role="dialog"
+            aria-modal="true"
+            aria-label={ariaLabel || "Exposé view"}
+            style={{
+              opacity: backdropVisible ? 1 : 0,
+              transition: "opacity 0.3s ease",
+            }}
+          />,
+          document.body,
+        )}
+    </>
+  );
 };
