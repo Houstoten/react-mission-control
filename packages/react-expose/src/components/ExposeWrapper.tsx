@@ -303,7 +303,7 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
               height: "100%",
             }),
         transition:
-          "transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease",
+          `transform var(--expose-transition-duration) var(--expose-transition-easing), opacity var(--expose-transition-duration) ease, box-shadow 0.3s ease, filter var(--expose-transition-duration) ease`,
         transformOrigin: "center center",
         willChange:
           isActive || highlightedComponent === componentId.current
@@ -323,7 +323,7 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
         boxShadow: isActive
           ? undefined
           : highlightedComponent === componentId.current
-            ? "0 0 0 4px rgba(64, 156, 255, 0.7), 0 5px 20px rgba(0, 0, 0, 0.2)"
+            ? "0 0 0 4px var(--expose-highlight-muted), 0 5px 20px rgba(0, 0, 0, 0.2)"
             : "none",
         pointerEvents: "auto",
         filter: highlightedComponent === componentId.current ? "none" : "blur(0px)",
@@ -379,7 +379,7 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
               style={{
                 borderWidth: `${borderWidth}px`,
                 borderStyle: "solid",
-                borderColor: isHovered ? "rgba(64, 156, 255, 0.85)" : "transparent",
+                borderColor: isHovered ? "var(--expose-highlight)" : "transparent",
                 borderRadius: "6px",
               }}
             />
@@ -398,14 +398,14 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  backgroundColor: "rgba(0, 0, 0, 0.75)",
-                  color: "white",
-                  padding: "4px 8px",
+                  backgroundColor: "var(--expose-label-bg)",
+                  color: "var(--expose-label-color)",
+                  padding: "var(--expose-label-padding)",
                   borderRadius: "4px",
-                  fontSize: "12px",
-                  fontWeight: "bold",
+                  fontSize: "var(--expose-label-font-size)",
+                  fontWeight: "var(--expose-label-font-weight)",
                   whiteSpace: "nowrap",
-                  transition: "opacity 0.2s ease",
+                  transition: "opacity var(--expose-transition-duration) ease",
                   pointerEvents: "none",
                   zIndex: 100003,
                 }}

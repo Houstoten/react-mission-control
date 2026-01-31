@@ -1,222 +1,246 @@
-.expose-container {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+/* CSS Custom Properties — defined OUTSIDE @layer so they're always available
+   regardless of cascade layer ordering (e.g. Tailwind's @layer base). */
+:root {
+  /* Colors */
+  --expose-highlight: rgba(64, 156, 255, 0.85);
+  --expose-highlight-muted: rgba(64, 156, 255, 0.7);
+  --expose-backdrop-bg: rgba(0, 0, 0, 0.3);
+  --expose-label-bg: rgba(0, 0, 0, 0.75);
+  --expose-label-color: white;
+  --expose-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  --expose-click-overlay: rgba(0, 0, 0, 0.01);
+
+  /* Geometry */
+  --expose-border-radius: 8px;
+  --expose-border-width: 3px;
+  --expose-label-font-size: 12px;
+  --expose-label-padding: 4px 8px;
+
+  /* Typography */
+  --expose-label-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Oxygen, Ubuntu, Cantarell, sans-serif;
+  --expose-label-font-weight: bold;
+
+  /* Timing */
+  --expose-transition-duration: 0.2s;
+  --expose-transition-easing: cubic-bezier(0.16, 1, 0.3, 1);
+  --expose-backdrop-duration: 0.3s;
+  --expose-highlight-pulse-duration: 1.5s;
+
+  /* Blur */
+  --expose-blur-amount: 10px;
+  --expose-highlight-blur: 3px;
+  --expose-label-blur: 3px;
 }
 
-/* When exposé is active, expose windows are portaled to body.
-   Containers keep layout space as placeholders. */
+@layer expose {
+  .expose-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
 
-.expose-window {
-  position: relative;
-  box-sizing: border-box;
-  transform-origin: center center;
-  transition:
-    transform 0.1s cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 0.1s ease;
-  border-radius: 8px;
-}
+  .expose-window {
+    position: relative;
+    box-sizing: border-box;
+    transform-origin: center center;
+    transition:
+      transform 0.1s var(--expose-transition-easing),
+      box-shadow 0.1s ease;
+    border-radius: var(--expose-border-radius);
+  }
 
-/* Highlighted window styling */
-.expose-window-highlighted {
-  box-shadow:
-    0 0 0 4px rgba(64, 156, 255, 0.7),
-    0 5px 20px rgba(0, 0, 0, 0.2) !important;
-  z-index: 100002 !important;
-  position: relative;
-  transform: scale(1.02) !important; /* Slightly larger to stand out */
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease,
-    filter 0.2s ease !important;
-}
-
-/* Apply blur to all components when any component is highlighted */
-body:has(.expose-window-highlighted) .expose-window:not(.expose-window-highlighted) {
-  filter: blur(3px) !important;
-  transition: filter 0.2s ease;
-  opacity: 0.7;
-}
-
-/* The pulsing highlight effect on the highlighted component */
-@keyframes highlight-pulse {
-  0% {
+  /* Highlighted window styling */
+  .expose-window-highlighted {
     box-shadow:
-      0 0 0 4px rgba(64, 156, 255, 0.7),
-      0 5px 20px rgba(0, 0, 0, 0.2);
-  }
-  50% {
-    box-shadow:
-      0 0 0 6px rgba(64, 156, 255, 0.9),
-      0 5px 25px rgba(0, 0, 0, 0.3);
-  }
-  100% {
-    box-shadow:
-      0 0 0 4px rgba(64, 156, 255, 0.7),
-      0 5px 20px rgba(0, 0, 0, 0.2);
-  }
-}
-
-.expose-window-highlighted {
-  animation: highlight-pulse 1.5s ease-in-out infinite;
-}
-
-/* Special overlay for highlighted window */
-.expose-window-highlighted::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  border-radius: 8px;
-  box-shadow: inset 0 0 20px rgba(64, 156, 255, 0.3);
-  pointer-events: none;
-  z-index: 50;
-}
-
-/* Label displayed below exposed component when hovered */
-.expose-window-label {
-  position: absolute;
-  top: calc(50% - 10px);
-  left: 50%;
-  transform: translateX(-50%);
-  text-align: center;
-  color: white;
-  font-size: 14px;
-  font-weight: 500;
-  padding: 6px 12px;
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-  z-index: 100004; /* Very high z-index to ensure visibility */
-  pointer-events: none;
-  background-color: rgba(0, 0, 0, 0.75);
-  border-radius: 6px;
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  width: max-content; /* Use max-content for flexible width */
-  white-space: nowrap; /* Keep text on a single line */
-  overflow: visible; /* Allow content to be fully visible */
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
-  height: auto;
-  min-height: fit-content;
-  max-width: none;
-}
-
-.expose-window-active {
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-  border-radius: 8px;
-  overflow: hidden;
-  cursor: pointer;
-  transition:
-    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 0.3s ease;
-  position: relative !important;
-  z-index: 100001 !important; /* Ensure windows are above backdrop */
-}
-
-/* Overlay div to block click-through */
-.expose-window-active::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 5;
-  cursor: pointer;
-  background-color: rgba(0, 0, 0, 0.01); /* Nearly invisible but blocks clicks */
-}
-
-/* Show label on hover */
-.expose-window-active:hover .expose-window-label {
-  opacity: 1;
-}
-
-/* Container for border and label */
-.expose-window-border-container {
-  position: fixed;
-  pointer-events: none;
-  z-index: 100002;
-  overflow: visible !important;
-  box-sizing: border-box !important;
-}
-
-/* Border overlay that displays on hover */
-.expose-window-border-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border: solid transparent; /* Width is set dynamically */
-  border-radius: 10px; /* Slightly larger radius to ensure it surrounds the content */
-  pointer-events: none; /* Let clicks pass through */
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.3s ease;
-  will-change: border-color;
-  box-sizing: border-box !important; /* Force border-box to ensure accurate sizing */
-  margin: 0 !important; /* Remove any margins */
-  padding: 0 !important; /* Remove any padding */
-}
-
-/* When hover class is added, show the border */
-.expose-window-border-overlay.hover {
-  border-color: rgba(64, 156, 255, 0.85); /* Light blue border */
-}
-
-/* Backdrop for exposé view — sits above blurred content, below expose windows */
-.expose-backdrop {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
-  background: rgba(0, 0, 0, 0.3) !important;
-  z-index: 100000 !important;
-  pointer-events: auto !important;
-}
-
-/* Reduced motion support */
-@media (prefers-reduced-motion: reduce) {
-  .expose-window,
-  .expose-window-active,
-  .expose-window-highlighted,
-  .expose-window-border-overlay,
-  .expose-window-label,
-  .expose-backdrop {
-    transition: none !important;
-    animation: none !important;
+      0 0 0 4px var(--expose-highlight-muted),
+      0 5px 20px rgba(0, 0, 0, 0.2) !important;
+    z-index: 100002 !important;
+    position: relative;
+    transform: scale(1.02) !important;
+    transition:
+      transform var(--expose-transition-duration) ease,
+      box-shadow var(--expose-transition-duration) ease,
+      filter var(--expose-transition-duration) ease !important;
+    animation: highlight-pulse var(--expose-highlight-pulse-duration) ease-in-out infinite;
   }
 
-  /* Disable blur effects */
+  /* Apply blur to all components when any component is highlighted */
   body:has(.expose-window-highlighted) .expose-window:not(.expose-window-highlighted) {
-    filter: none !important;
+    filter: blur(var(--expose-highlight-blur)) !important;
+    transition: filter var(--expose-transition-duration) ease;
+    opacity: 0.7;
   }
 
-  .expose-window-label,
+  /* The pulsing highlight effect on the highlighted component */
+  @keyframes highlight-pulse {
+    0%,
+    100% {
+      box-shadow:
+        0 0 0 4px var(--expose-highlight-muted),
+        0 5px 20px rgba(0, 0, 0, 0.2);
+    }
+    50% {
+      box-shadow:
+        0 0 0 6px var(--expose-highlight),
+        0 5px 25px rgba(0, 0, 0, 0.3);
+    }
+  }
+
+  /* Special overlay for highlighted window */
+  .expose-window-highlighted::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: var(--expose-border-radius);
+    box-shadow: inset 0 0 20px color-mix(in srgb, var(--expose-highlight) 35%, transparent);
+    pointer-events: none;
+    z-index: 50;
+  }
+
+  /* Label displayed below exposed component when hovered */
+  .expose-window-label {
+    position: absolute;
+    top: calc(50% - 10px);
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    color: var(--expose-label-color);
+    font-size: var(--expose-label-font-size);
+    font-weight: var(--expose-label-font-weight);
+    padding: var(--expose-label-padding);
+    font-family: var(--expose-label-font);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    z-index: 100004;
+    pointer-events: none;
+    background-color: var(--expose-label-bg);
+    border-radius: 6px;
+    backdrop-filter: blur(var(--expose-label-blur));
+    -webkit-backdrop-filter: blur(var(--expose-label-blur));
+    opacity: 0;
+    transition: opacity var(--expose-transition-duration) ease;
+    width: max-content;
+    white-space: nowrap;
+    overflow: visible;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+    height: auto;
+    min-height: fit-content;
+    max-width: none;
+  }
+
+  .expose-window-active {
+    box-shadow: var(--expose-shadow);
+    border-radius: var(--expose-border-radius);
+    overflow: hidden;
+    cursor: pointer;
+    transition:
+      transform var(--expose-transition-duration) var(--expose-transition-easing),
+      box-shadow 0.3s ease;
+    position: relative !important;
+    z-index: 100001 !important;
+  }
+
+  /* Overlay div to block click-through */
+  .expose-window-active::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 5;
+    cursor: pointer;
+    background-color: var(--expose-click-overlay);
+  }
+
+  /* Show label on hover */
+  .expose-window-active:hover .expose-window-label {
+    opacity: 1;
+  }
+
+  /* Container for border and label */
+  .expose-window-border-container {
+    position: fixed;
+    pointer-events: none;
+    z-index: 100002;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Border overlay that displays on hover */
+  .expose-window-border-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: solid transparent;
+    border-radius: calc(var(--expose-border-radius) + 2px);
+    pointer-events: none;
+    transition:
+      border-color var(--expose-transition-duration) ease,
+      box-shadow 0.3s ease;
+    will-change: border-color;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* When hover class is added, show the border */
+  .expose-window-border-overlay.hover {
+    border-color: var(--expose-highlight);
+  }
+
+  /* Backdrop for exposé view */
   .expose-backdrop {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: var(--expose-backdrop-bg) !important;
+    z-index: 100000 !important;
+    pointer-events: auto !important;
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    .expose-window,
+    .expose-window-active,
+    .expose-window-highlighted,
+    .expose-window-border-overlay,
+    .expose-window-label,
+    .expose-backdrop {
+      transition: none !important;
+      animation: none !important;
+    }
+
+    body:has(.expose-window-highlighted) .expose-window:not(.expose-window-highlighted) {
+      filter: none !important;
+    }
+
+    .expose-window-label,
+    .expose-backdrop {
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+    }
+  }
+
+  /* Visually hidden utility for screen readers */
+  .expose-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 }
-
-/* Visually hidden utility for screen readers */
-.expose-sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-

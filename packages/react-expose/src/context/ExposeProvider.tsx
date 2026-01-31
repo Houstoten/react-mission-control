@@ -40,6 +40,16 @@ export const ExposeProvider: React.FC<ExposeProviderProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shortcut, blurAmount, setConfig]); // Intentionally omit callback functions to prevent infinite loops
 
+  // Bridge blurAmount prop to CSS custom property
+  useEffect(() => {
+    if (blurAmount !== undefined) {
+      document.documentElement.style.setProperty('--expose-blur-amount', `${blurAmount}px`);
+    }
+    return () => {
+      document.documentElement.style.removeProperty('--expose-blur-amount');
+    };
+  }, [blurAmount]);
+
   // Update border width when activated
   useEffect(() => {
     if (isActive) {
@@ -295,7 +305,7 @@ export const ExposeProvider: React.FC<ExposeProviderProps> = ({
             aria-label={ariaLabel || "Exposé view"}
             style={{
               opacity: backdropVisible ? 1 : 0,
-              transition: "opacity 0.3s ease",
+              transition: "opacity var(--expose-backdrop-duration) ease",
             }}
           />,
           document.body,
