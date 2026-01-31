@@ -1,6 +1,6 @@
 "use client"
 
-import { ExposeProvider, ExposeWrapper, ExposeTrigger } from "react-expose"
+import { ExposeProvider, ExposeWrapper } from "react-expose"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { DemoButton } from "@/components/demo-button"
 import { Button } from "@/components/ui/button"
@@ -37,17 +37,15 @@ yarn add react-expose
 # or  
 pnpm add react-expose`
 
-  const usageCode = `import { ExposeProvider, ExposeWrapper, ExposeTrigger } from 'react-expose'
+  const usageCode = `import { ExposeProvider, ExposeWrapper } from 'react-expose'
 
 function App() {
   return (
     <ExposeProvider shortcut="ArrowUp+ArrowUp">
-      <ExposeTrigger />
-      
       <ExposeWrapper label="Dashboard">
         <YourComponent />
       </ExposeWrapper>
-      
+
       <ExposeWrapper label="Settings">
         <AnotherComponent />
       </ExposeWrapper>
@@ -57,7 +55,6 @@ function App() {
 
   return (
     <ExposeProvider shortcut="ArrowUp+ArrowUp" blurAmount={10}>
-      <ExposeTrigger />
       
       {/* Navigation */}
       <nav className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b">

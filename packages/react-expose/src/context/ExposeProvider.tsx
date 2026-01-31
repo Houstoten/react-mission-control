@@ -1,5 +1,5 @@
 import type React from "react";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useIsExposeActive, useExposeActions } from "../store/exposeStore";
 
@@ -122,114 +122,6 @@ export const ExposeProvider: React.FC<ExposeProviderProps> = ({
       setBackdropMounted(false);
     }, 200);
     return () => clearTimeout(timer);
-  }, [isActive]);
-
-  // Strip ancestor stacking contexts so expose windows can escape them
-  // and compete at the root stacking level (above backdrop z-index 9999).
-  // Uses !important to override CSS animation fill-mode values.
-  useLayoutEffect(() => {
-    if (!isActive) return undefined;
-
-    // Properties that create stacking contexts, mapped to their neutral value
-    const propsToStrip: Array<[string, string, (c: CSSStyleDeclaration) => boolean]> = [
-      ["z-index", "auto", (c) => c.zIndex !== "auto" && c.position !== "static"],
-      ["transform", "none", (c) => c.transform !== "none"],
-      ["filter", "none", (c) => c.filter !== "none"],
-      ["opacity", "1", (c) => c.opacity !== "1"],
-      ["will-change", "auto", (c) => c.willChange !== "auto"],
-      ["isolation", "auto", (c) => c.isolation === "isolate"],
-      ["mix-blend-mode", "normal", (c) => c.mixBlendMode !== "normal"],
-      ["perspective", "none", (c) => c.perspective !== "none"],
-      ["clip-path", "none", (c) => c.clipPath !== "none"],
-      ["contain", "none", (c) => c.contain !== "none"],
-      [
-        "backdrop-filter",
-        "none",
-        (c) => {
-          const v =
-            c.getPropertyValue("backdrop-filter") ||
-            c.getPropertyValue("-webkit-backdrop-filter");
-          return !!v && v !== "none";
-        },
-      ],
-      // CSS animations with transform/opacity create stacking contexts and
-      // animation fill-mode:forwards overrides normal inline styles
-      ["animation", "none", (c) => c.animationName !== "none" && c.animationName !== ""],
-    ];
-
-    type SavedProp = { prop: string; value: string; priority: string };
-    type SavedEntry = { element: HTMLElement; props: SavedProp[] };
-
-    const savedEntries: SavedEntry[] = [];
-    const visited = new Set<HTMLElement>();
-
-    const windows = document.querySelectorAll<HTMLElement>(".expose-window");
-
-    for (const win of windows) {
-      let ancestor = win.parentElement;
-
-      while (ancestor && ancestor !== document.body && ancestor !== document.documentElement) {
-        if (visited.has(ancestor)) {
-          ancestor = ancestor.parentElement;
-          continue;
-        }
-        visited.add(ancestor);
-
-        // Skip our own expose elements
-        if (
-          ancestor.classList.contains("expose-container") ||
-          ancestor.classList.contains("expose-backdrop") ||
-          ancestor.id === "expose-backdrop-portal"
-        ) {
-          ancestor = ancestor.parentElement;
-          continue;
-        }
-
-        const computed = getComputedStyle(ancestor);
-        const entry: SavedEntry = { element: ancestor, props: [] };
-
-        for (const [prop, neutralValue, shouldStrip] of propsToStrip) {
-          if (shouldStrip(computed)) {
-            // Save current inline value and priority
-            entry.props.push({
-              prop,
-              value: ancestor.style.getPropertyValue(prop),
-              priority: ancestor.style.getPropertyPriority(prop),
-            });
-            // Use !important to beat CSS animation fill-mode values
-            ancestor.style.setProperty(prop, neutralValue, "important");
-
-            // Also handle webkit prefix for backdrop-filter
-            if (prop === "backdrop-filter") {
-              entry.props.push({
-                prop: "-webkit-backdrop-filter",
-                value: ancestor.style.getPropertyValue("-webkit-backdrop-filter"),
-                priority: ancestor.style.getPropertyPriority("-webkit-backdrop-filter"),
-              });
-              ancestor.style.setProperty("-webkit-backdrop-filter", neutralValue, "important");
-            }
-          }
-        }
-
-        if (entry.props.length > 0) {
-          savedEntries.push(entry);
-        }
-
-        ancestor = ancestor.parentElement;
-      }
-    }
-
-    return () => {
-      for (const { element, props } of savedEntries) {
-        for (const { prop, value, priority } of props) {
-          if (value) {
-            element.style.setProperty(prop, value, priority);
-          } else {
-            element.style.removeProperty(prop);
-          }
-        }
-      }
-    };
   }, [isActive]);
 
   // Apply blur to the app content by blurring body's direct children

@@ -1,6 +1,4 @@
 // Export components
-
-export { ExposeTrigger } from "./components/ExposeTrigger";
 export { ExposeWrapper } from "./components/ExposeWrapper";
 export { ExposeProvider } from "./context/ExposeProvider";
 // Export hooks from Zustand store
