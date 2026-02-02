@@ -18,7 +18,8 @@ export interface ExposeWrapperProps {
 }
 
 export interface AnimationStyles {
-  transform: string;
+  translateX: number;
+  translateY: number;
   scale: number;
   zIndex: number;
 }

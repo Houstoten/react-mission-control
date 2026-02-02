@@ -141,8 +141,6 @@
     transition:
       transform var(--expose-transition-duration) var(--expose-transition-easing),
       box-shadow 0.3s ease;
-    position: relative !important;
-    z-index: 100001 !important;
   }
 
   /* Overlay div to block click-through */

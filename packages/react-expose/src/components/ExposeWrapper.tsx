@@ -22,9 +22,13 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
   const componentId = useRef(propId || `expose-${generatedId}`);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
+  const resizeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Store calculated transform and scale for this window
   const [animationStyles, setAnimationStyles] = useState<AnimationStyles | null>(null);
+
+  // Suppress CSS transition during resize to prevent glitchy intermediate animation
+  const [suppressTransition, setSuppressTransition] = useState(false);
 
   // Hover state for border overlay (replaces imperative event listeners)
   const [isHovered, setIsHovered] = useState(false);
@@ -113,18 +117,29 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
         cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
       }
+      if (resizeTimeoutRef.current) {
+        clearTimeout(resizeTimeoutRef.current);
+        resizeTimeoutRef.current = null;
+      }
       setAnimationStyles(null);
       setBorderPosition(null);
+      setSuppressTransition(false);
       return;
     }
 
-    // Use requestAnimationFrame for smoother animations
+    // FLIP-inspired position calculation.
+    // Uses lastRectRef (captured before activation) as the stable base position.
+    // The element is portaled to body with position:fixed at these coordinates,
+    // so lastRectRef accurately represents the element's actual position.
+    // On resize, grid targets are recalculated from new viewport dimensions
+    // while the base position stays stable — no feedback loop.
     const updatePosition = () => {
       if (!wrapperRef.current) return;
 
       const element = wrapperRef.current;
-      // When portaled, use getBoundingClientRect which gives viewport coords
-      const rect = element.getBoundingClientRect();
+
+      const baseRect = lastRectRef.current;
+      if (!baseRect) return;
 
       // Get viewport dimensions
       const viewportWidth = window.innerWidth;
@@ -152,47 +167,50 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
       const cellWidth = (viewportWidth - padding * (columns + 1)) / columns;
       const cellHeight = (viewportHeight - padding * (rows + 1)) / rows;
 
+      // Use the original (pre-transform) dimensions for scale calculations
+      const origWidth = baseRect.width;
+      const origHeight = baseRect.height;
+
       // Determine scaling factor based on component size and available space
-      const isSmall = rect.width < 200 || rect.height < 150;
-      const isVeryLarge = rect.width > viewportWidth * 0.6 || rect.height > viewportHeight * 0.6;
+      const isSmall = origWidth < 200 || origHeight < 150;
+      const isVeryLarge = origWidth > viewportWidth * 0.6 || origHeight > viewportHeight * 0.6;
 
       // Calculate max scale that would fit in cell with padding
-      const maxWidthScale = (cellWidth / rect.width) * 0.85; // 85% of cell width
-      const maxHeightScale = (cellHeight / rect.height) * 0.85; // 85% of cell height
+      const maxWidthScale = (cellWidth / origWidth) * 0.85; // 85% of cell width
+      const maxHeightScale = (cellHeight / origHeight) * 0.85; // 85% of cell height
       let targetScale = Math.min(maxWidthScale, maxHeightScale);
 
       // Adjust scale for edge cases
       if (isSmall && targetScale < 0.7) targetScale = Math.max(targetScale, 0.7);
       if (isVeryLarge) targetScale = Math.min(targetScale, 0.25);
 
-      // Calculate center positions
+      // Calculate center positions — target cell center vs element's fixed base center
       const centerX = padding + gridCol * (cellWidth + padding) + cellWidth / 2;
       const centerY = padding + gridRow * (cellHeight + padding) + cellHeight / 2;
-      const currentCenterX = rect.left + rect.width / 2;
-      const currentCenterY = rect.top + rect.height / 2;
+      const baseCenterX = baseRect.left + origWidth / 2;
+      const baseCenterY = baseRect.top + origHeight / 2;
 
-      // Calculate transform values
-      const translateX = centerX - currentCenterX;
-      const translateY = centerY - currentCenterY;
-      const finalTranslateX = Math.round(translateX);
-      const finalTranslateY = Math.round(translateY);
-      const finalScale = parseFloat(targetScale.toFixed(3));
+      // Calculate transform values from the stable base position
+      const translateX = Math.round(centerX - baseCenterX);
+      const translateY = Math.round(centerY - baseCenterY);
+      const scale = parseFloat(targetScale.toFixed(3));
 
       setAnimationStyles({
-        transform: `translate(${finalTranslateX}px, ${finalTranslateY}px)`,
-        scale: finalScale,
+        translateX,
+        translateY,
+        scale,
         zIndex: 100001,
       });
 
       // Calculate border position for the portal
-      const visualWidth = rect.width * finalScale;
-      const visualHeight = rect.height * finalScale;
-      const visualCenterX = currentCenterX + finalTranslateX;
-      const visualCenterY = currentCenterY + finalTranslateY;
+      const visualWidth = origWidth * scale;
+      const visualHeight = origHeight * scale;
+      const visualCenterX = baseCenterX + translateX;
+      const visualCenterY = baseCenterY + translateY;
 
       const borderOffset = Math.max(
         4, // min offset
-        Math.min(12, 14 * (1 - finalScale)), // max offset
+        Math.min(12, 14 * (1 - scale)), // max offset
       );
 
       const scaledVisualWidth = visualWidth * 0.97;
@@ -211,12 +229,23 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
     // Run immediately once for initial positioning
     updatePosition();
 
-    // Then listen for resize events which might require recalculation
+    // On resize: recalculate grid positions instantly (no CSS transition).
+    // Suppress transition → recalculate → debounce re-enable transition after resize ends.
     const handleResize = () => {
+      setSuppressTransition(true);
+
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current);
       }
       rafRef.current = requestAnimationFrame(updatePosition);
+
+      // Re-enable transition after resize settles
+      if (resizeTimeoutRef.current) {
+        clearTimeout(resizeTimeoutRef.current);
+      }
+      resizeTimeoutRef.current = setTimeout(() => {
+        setSuppressTransition(false);
+      }, 150);
     };
 
     window.addEventListener("resize", handleResize);
@@ -226,6 +255,10 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
+      }
+      if (resizeTimeoutRef.current) {
+        clearTimeout(resizeTimeoutRef.current);
+        resizeTimeoutRef.current = null;
       }
     };
   }, [isActive, borderWidth, label]);
@@ -275,6 +308,17 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
     if (isActive) setIsHovered(false);
   }, [isActive]);
 
+  // Build the transform string from numeric values (no regex parsing needed)
+  const transformValue =
+    animationStyles && isActive
+      ? `translate(${animationStyles.translateX}px, ${animationStyles.translateY}px) scale(${animationStyles.scale})`
+      : "none";
+
+  // Build the transition — suppress during resize to prevent glitchy intermediate animation
+  const transitionValue = suppressTransition
+    ? "none"
+    : `transform var(--expose-transition-duration) var(--expose-transition-easing), opacity var(--expose-transition-duration) ease, box-shadow 0.3s ease, filter var(--expose-transition-duration) ease`;
+
   // The window element (shared between normal and portaled rendering)
   const windowElement = (
     <div
@@ -302,8 +346,7 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
               width: "100%",
               height: "100%",
             }),
-        transition:
-          `transform var(--expose-transition-duration) var(--expose-transition-easing), opacity var(--expose-transition-duration) ease, box-shadow 0.3s ease, filter var(--expose-transition-duration) ease`,
+        transition: transitionValue,
         transformOrigin: "center center",
         willChange:
           isActive || highlightedComponent === componentId.current
@@ -315,10 +358,7 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
             : highlightedComponent === componentId.current
               ? 1000
               : "auto",
-        transform:
-          animationStyles && isActive
-            ? `translate(${animationStyles.transform.match(/translate\((.*?)px,/)?.[1] || 0}px, ${animationStyles.transform.match(/px,\s*(.*?)px\)/)?.[1] || 0}px) scale(${animationStyles?.scale || 1})`
-            : "none",
+        transform: transformValue,
         background: isActive ? "var(--expose-window-bg, #ffffff)" : "transparent",
         boxShadow: isActive
           ? undefined
