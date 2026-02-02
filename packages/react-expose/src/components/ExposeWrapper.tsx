@@ -319,7 +319,7 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
           animationStyles && isActive
             ? `translate(${animationStyles.transform.match(/translate\((.*?)px,/)?.[1] || 0}px, ${animationStyles.transform.match(/px,\s*(.*?)px\)/)?.[1] || 0}px) scale(${animationStyles?.scale || 1})`
             : "none",
-        background: isActive ? undefined : "transparent",
+        background: isActive ? "var(--expose-window-bg, #ffffff)" : "transparent",
         boxShadow: isActive
           ? undefined
           : highlightedComponent === componentId.current
@@ -389,6 +389,7 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
                 style={{
                   opacity: isHovered ? 1 : 0,
                   position: "absolute",
+                  top: "auto",
                   bottom: "-30px",
                   left: "50%",
                   transform: "translateX(-50%)",

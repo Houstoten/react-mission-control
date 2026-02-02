@@ -1,6 +1,6 @@
 "use client"
 
-import { ExposeProvider, ExposeWrapper } from "react-expose"
+import { ExposeProvider, ExposeTrigger, ExposeWrapper } from "react-expose"
 
 export default function Home() {
   return (
@@ -29,7 +29,7 @@ export default function Home() {
 
         {/* ── Cards Grid ── */}
         <section className="bg-border grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[1px]">
-          <ExposeWrapper label="install">
+          <ExposeWrapper label="install" style={{ height: "100%" }}>
             <Card number="01" title="install">
               <pre className="mt-grid-3 bg-white border border-border">
                 <code>
@@ -53,7 +53,7 @@ export default function Home() {
             </Card>
           </ExposeWrapper>
 
-          <ExposeWrapper label="wrap">
+          <ExposeWrapper label="wrap" style={{ height: "100%" }}>
             <Card number="02" title="wrap">
               <pre className="mt-grid-3 bg-white border border-border">
                 <code>
@@ -97,7 +97,7 @@ export default function Home() {
             </Card>
           </ExposeWrapper>
 
-          <ExposeWrapper label="activate">
+          <ExposeWrapper label="activate" style={{ height: "100%" }}>
             <Card number="03" title="activate">
               <div className="mt-grid-3 flex items-center justify-center gap-grid-3">
                 <kbd className="inline-flex items-center justify-center w-[56px] h-[48px] border border-border bg-white text-body text-ink select-none shadow-[0_2px_0_0_#c0c0c0]">
@@ -108,13 +108,44 @@ export default function Home() {
                   <Arrow />
                 </kbd>
               </div>
-              <p className="mt-grid-3 text-caption text-muted text-center">
-                double-tap to enter expose view
-              </p>
+
+              <div className="mt-grid-3 flex items-center justify-center gap-grid-2">
+                <span className="text-caption text-muted">or</span>
+                <ExposeTrigger className="px-grid-2 py-1 border border-border bg-white text-caption text-ink hover:bg-ink hover:text-white transition-colors">
+                  click to activate
+                </ExposeTrigger>
+              </div>
+
+              <pre className="mt-grid-3 bg-white border border-border">
+                <code>
+                  <div className="code-line">
+                    <span className="code-comment">{"// component"}</span>
+                  </div>
+                  <div className="code-line">
+                    {"<"}
+                    <span className="code-keyword">ExposeTrigger</span>
+                    {">"}
+                    <span className="code-string">activate</span>
+                    {"</"}
+                    <span className="code-keyword">ExposeTrigger</span>
+                    {">"}
+                  </div>
+                  <div className="code-line">&nbsp;</div>
+                  <div className="code-line">
+                    <span className="code-comment">{"// hook"}</span>
+                  </div>
+                  <div className="code-line">
+                    <span className="code-keyword">const</span>
+                    {" { activate } = "}
+                    <span className="code-keyword">useExposeActions</span>
+                    {"()"}
+                  </div>
+                </code>
+              </pre>
             </Card>
           </ExposeWrapper>
 
-          <ExposeWrapper label="navigate">
+          <ExposeWrapper label="navigate" style={{ height: "100%" }}>
             <Card number="04" title="navigate">
               <p className="mt-grid-3 text-body text-ink leading-relaxed">
                 all wrapped components zoom out into a grid.
@@ -127,7 +158,7 @@ export default function Home() {
             </Card>
           </ExposeWrapper>
 
-          <ExposeWrapper label="configure">
+          <ExposeWrapper label="configure" style={{ height: "100%" }}>
             <Card number="05" title="configure">
               <pre className="mt-grid-3 bg-white border border-border">
                 <code>
@@ -157,7 +188,7 @@ export default function Home() {
             </Card>
           </ExposeWrapper>
 
-          <ExposeWrapper label="customize">
+          <ExposeWrapper label="customize" style={{ height: "100%" }}>
             <Card number="06" title="customize">
               <pre className="mt-grid-3 bg-white border border-border">
                 <code>
@@ -219,7 +250,7 @@ function Card({
   children: React.ReactNode
 }) {
   return (
-    <div className="bg-surface p-grid-5 min-h-[320px] flex flex-col">
+    <div className="bg-white p-grid-5 h-full min-h-[320px] flex flex-col">
       <div className="flex items-baseline gap-grid-2">
         <span className="text-caption text-muted font-mono">{number}</span>
         <h2 className="text-heading text-ink">{title}</h2>

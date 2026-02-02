@@ -1,6 +1,21 @@
+@import "react-expose/dist/index.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ── Override react-expose theme to monochrome ── */
+:root {
+  --expose-highlight: #1a1a1a;
+  --expose-highlight-muted: rgba(26, 26, 26, 0.6);
+  --expose-backdrop-bg: rgba(255, 255, 255, 0.85);
+  --expose-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  --expose-label-bg: #1a1a1a;
+  --expose-label-color: #ffffff;
+  --expose-border-radius: 0px;
+  --expose-border-width: 2px;
+  --expose-window-bg: #ffffff;
+}
 
 @layer base {
   * {
@@ -13,7 +28,7 @@
   }
 
   body {
-    background-color: #fafafa;
+    background-color: #ffffff;
     color: #1a1a1a;
     font-family: "Inter", system-ui, sans-serif;
   }
