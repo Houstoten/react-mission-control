@@ -1,9 +1,8 @@
 # react-mission-control
 
-[![npm version](https://img.shields.io/npm/v/react-mission-control.svg)](https://www.npmjs.com/package/react-mission-control)
-[![bundle size](https://img.shields.io/bundlephobia/minzip/react-mission-control)](https://bundlephobia.com/package/react-mission-control)
-[![license](https://img.shields.io/npm/l/react-mission-control.svg)](https://github.com/Houstoten/react-mission-control/blob/main/LICENSE)
-[![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
+[![npm version](https://badgen.net/npm/v/react-mission-control)](https://www.npmjs.com/package/react-mission-control)
+[![license](https://badgen.net/npm/license/react-mission-control)](https://github.com/Houstoten/react-mission-control/blob/main/packages/react-expose/LICENSE)
+[![TypeScript](https://badgen.net/badge/TypeScript/Ready/blue)](https://www.typescriptlang.org/)
 
 macOS Mission Control-like experience for React applications.
 
@@ -21,7 +20,7 @@ pnpm add react-mission-control
 
 ```tsx
 import { MCProvider, MCWrapper } from "react-mission-control";
-import "react-mission-control/css";
+import "react-mission-control/styles.css";
 
 function App() {
   return (
@@ -106,4 +105,4 @@ Override CSS variables to customize appearance:
 
 ## License
 
-MIT
+[MIT](./packages/react-expose/LICENSE)
