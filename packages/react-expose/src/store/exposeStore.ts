@@ -113,6 +113,7 @@ const createStore = () =>
         })),
 
       updateBorderWidthForScreen: () => {
+        if (typeof window === "undefined") return;
         const screenWidth = window.innerWidth;
         let borderWidth = 3;
 
