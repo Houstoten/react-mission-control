@@ -1,7 +1,7 @@
 import type React from "react";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useIsExposeActive, useExposeActions } from "../store/exposeStore";
+import { useBodyScreenshot, useBodyScrollY, useBodyViewportHeight, useIsExposeActive, useIsMobile, useExposeActions } from "../store/exposeStore";
 
 interface ExposeProviderProps {
   children: React.ReactNode;
@@ -11,6 +11,63 @@ interface ExposeProviderProps {
   blurAmount?: number;
   ariaLabel?: string;
 }
+
+/**
+ * "Current View" card rendered as the first item in the mobile scroll container.
+ * Displays a CSS-scaled snapshot of the page captured before activation.
+ * Tapping it dismisses the exposé view.
+ */
+const CurrentViewCard: React.FC<{
+  screenshot: string | null;
+  scrollY: number;
+  viewportHeight: number;
+  onClose: () => void;
+}> = ({ screenshot, scrollY, viewportHeight, onClose }) => {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [marginTop, setMarginTop] = useState(0);
+
+  useLayoutEffect(() => {
+    if (cardRef.current && viewportHeight > 0) {
+      const cardHeight = cardRef.current.offsetHeight;
+      const scale = (cardHeight / viewportHeight) * 5;
+      setMarginTop(-scrollY * scale);
+    }
+  }, [scrollY, viewportHeight]);
+
+  return (
+    <div
+      ref={cardRef}
+      className="expose-current-view-card"
+      onClick={onClose}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClose();
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      aria-label="Current view — tap to return"
+    >
+      {screenshot ? (
+        <img
+          src={screenshot}
+          alt=""
+          aria-hidden="true"
+          className="expose-current-view-img"
+          style={{
+            width: "100%",
+            transformOrigin: "top",
+            marginTop,
+          }}
+        />
+      ) : (
+        <div className="expose-current-view-placeholder" />
+      )}
+      <div className="expose-mobile-label">Current View</div>
+    </div>
+  );
+};
 
 export const ExposeProvider: React.FC<ExposeProviderProps> = ({
   children,
@@ -23,7 +80,50 @@ export const ExposeProvider: React.FC<ExposeProviderProps> = ({
   const lastKeyPressRef = useRef<number>(0);
   const previousFocusRef = useRef<Element | null>(null);
   const isActive = useIsExposeActive();
-  const { activate, deactivate, setConfig, updateBorderWidthForScreen } = useExposeActions();
+  const isMobile = useIsMobile();
+  const { activate, deactivate, setConfig, updateBorderWidthForScreen, setMobileScrollContainer, setBodyScreenshot } = useExposeActions();
+
+  // Capture a screenshot of the page BEFORE activating expose,
+  // so the image shows the unblurred page content.
+  const handleActivate = useCallback(async () => {
+    const mobile = typeof window !== "undefined" && window.innerWidth < 768;
+    if (mobile) {
+      const scrollY = window.scrollY;
+      const viewportHeight = window.innerHeight;
+
+      try {
+        const { toJpeg } = await import("html-to-image");
+        const dataUrl = await toJpeg(document.body, {
+          quality: 0.7,
+          cacheBust: true,
+          filter: (node: HTMLElement) => {
+            if (!(node instanceof HTMLElement)) return true;
+            const cls = node.className;
+            if (typeof cls === "string" && (
+              cls.includes("expose-backdrop") ||
+              cls.includes("expose-mobile-scroll-container") ||
+              cls.includes("expose-sr-only")
+            )) {
+              return false;
+            }
+            return true;
+          },
+        });
+        setBodyScreenshot(dataUrl, scrollY, viewportHeight);
+      } catch {
+        // Continue without screenshot — card shows shimmer placeholder
+      }
+    }
+    activate();
+  }, [activate, setBodyScreenshot]);
+
+  // Callback ref for the mobile scroll container — stores the DOM element in Zustand
+  const mobileScrollRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      setMobileScrollContainer(node);
+    },
+    [setMobileScrollContainer],
+  );
 
   // State to manage backdrop mount/unmount with exit animation
   const [backdropMounted, setBackdropMounted] = useState(false);
@@ -69,7 +169,7 @@ export const ExposeProvider: React.FC<ExposeProviderProps> = ({
 
           // If the last press was within 300ms, activate
           if (timeSinceLastPress < 300) {
-            activate();
+            handleActivate();
             lastKeyPressRef.current = 0; // Reset
           } else {
             // Record this press time
@@ -92,13 +192,13 @@ export const ExposeProvider: React.FC<ExposeProviderProps> = ({
 
         if (keyMatches && modifiersMatch) {
           e.preventDefault();
-          activate();
+          handleActivate();
         }
       }
       // Handle single key shortcut
       else if (!isActive && e.key === shortcut) {
         e.preventDefault();
-        activate();
+        handleActivate();
       }
 
       // Handle escape to deactivate
@@ -113,7 +213,7 @@ export const ExposeProvider: React.FC<ExposeProviderProps> = ({
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isActive, activate, deactivate, shortcut]);
+  }, [isActive, handleActivate, deactivate, shortcut]);
 
   // Manage backdrop mount/visible state for enter/exit animations
   useEffect(() => {
@@ -149,11 +249,12 @@ export const ExposeProvider: React.FC<ExposeProviderProps> = ({
 
     for (const child of document.body.children) {
       if (!(child instanceof HTMLElement)) continue;
-      // Skip expose windows (portaled), border containers, and backdrop
+      // Skip expose windows (portaled), border containers, backdrop, and mobile scroll container
       if (
         child.classList.contains("expose-window") ||
         child.classList.contains("expose-window-border-container") ||
-        child.classList.contains("expose-backdrop")
+        child.classList.contains("expose-backdrop") ||
+        child.classList.contains("expose-mobile-scroll-container")
       ) {
         continue;
       }
@@ -267,8 +368,8 @@ export const ExposeProvider: React.FC<ExposeProviderProps> = ({
 
     const handleDocumentClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      // If clicked on an expose window or inside one, let the window's handler deal with it
-      if (target.closest(".expose-window")) return;
+      // If clicked on an expose window or the current view card, let their handler deal with it
+      if (target.closest(".expose-window") || target.closest(".expose-current-view-card")) return;
       // Clicked outside any expose window — dismiss
       deactivate();
     };
@@ -284,6 +385,10 @@ export const ExposeProvider: React.FC<ExposeProviderProps> = ({
       document.removeEventListener("click", handleDocumentClick, true);
     };
   }, [isActive, deactivate]);
+
+  const bodyScreenshot = useBodyScreenshot();
+  const bodyScrollY = useBodyScrollY();
+  const bodyViewportHeight = useBodyViewportHeight();
 
   return (
     <>
@@ -308,6 +413,21 @@ export const ExposeProvider: React.FC<ExposeProviderProps> = ({
               transition: "opacity var(--expose-backdrop-duration) ease",
             }}
           />,
+          document.body,
+        )}
+
+      {/* Mobile scroll container — ExposeWrapper cards portal into this.
+          Includes a "Current View" card as the first item that shows a scaled
+          snapshot of the page and dismisses expose when tapped. */}
+      {isActive &&
+        isMobile &&
+        createPortal(
+          <div
+            ref={mobileScrollRef}
+            className="expose-mobile-scroll-container"
+          >
+            <CurrentViewCard screenshot={bodyScreenshot} scrollY={bodyScrollY} viewportHeight={bodyViewportHeight} onClose={deactivate} />
+          </div>,
           document.body,
         )}
     </>

@@ -6,6 +6,8 @@ import {
   useExposeBorderWidth,
   useHighlightedComponent,
   useIsExposeActive,
+  useIsMobile,
+  useMobileScrollContainer,
 } from "../store/exposeStore";
 import type { AnimationStyles, ExposeWrapperProps } from "../types";
 import "./styles.css";
@@ -33,7 +35,7 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
   // Hover state for border overlay (replaces imperative event listeners)
   const [isHovered, setIsHovered] = useState(false);
 
-  // Border position state for the portal
+  // Border position state for the portal (desktop only)
   const [borderPosition, setBorderPosition] = useState<{
     width: number;
     height: number;
@@ -52,6 +54,8 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
 
   // Use Zustand hooks
   const isActive = useIsExposeActive();
+  const isMobile = useIsMobile();
+  const mobileScrollContainer = useMobileScrollContainer();
   const borderWidth = useExposeBorderWidth();
   const highlightedComponent = useHighlightedComponent();
   const { registerWindow, unregisterWindow, setHighlightedComponent, setActive } =
@@ -85,14 +89,14 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
     }
   }, [isActive]);
 
-  // Handle scroll events to detect when scroll has ended
+  // Handle highlight timeout after selection
   useEffect(() => {
     const isThisHighlighted = highlightedComponent === componentId.current;
 
     if (isThisHighlighted) {
       const maxHighlightTimeout = setTimeout(() => {
         setHighlightedComponent(null);
-      }, 500); // Maximum highlight time
+      }, 500);
 
       return () => {
         clearTimeout(maxHighlightTimeout);
@@ -109,10 +113,9 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
     }
   }, [isActive]);
 
-  // Calculate and store animation properties
+  // Calculate and store animation properties (desktop grid layout only)
   useLayoutEffect(() => {
     if (!wrapperRef.current || !isActive) {
-      // Cancel any pending animation frames when not active
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
@@ -127,70 +130,64 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
       return;
     }
 
-    // FLIP-inspired position calculation.
-    // Uses lastRectRef (captured before activation) as the stable base position.
-    // The element is portaled to body with position:fixed at these coordinates,
-    // so lastRectRef accurately represents the element's actual position.
-    // On resize, grid targets are recalculated from new viewport dimensions
-    // while the base position stays stable — no feedback loop.
+    // Mobile: CSS handles layout via the scroll container — no JS transforms needed
+    if (isMobile) {
+      setAnimationStyles({
+        translateX: 0,
+        translateY: 0,
+        scale: 1,
+        zIndex: 100001,
+      });
+      setBorderPosition(null);
+      return;
+    }
+
+    // Desktop: FLIP-inspired position calculation
     const updatePosition = () => {
       if (!wrapperRef.current) return;
 
       const element = wrapperRef.current;
-
       const baseRect = lastRectRef.current;
       if (!baseRect) return;
 
-      // Get viewport dimensions
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
 
-      // Find all windows that are being exposed
       const allWindows = document.querySelectorAll(".expose-window");
       const count = allWindows.length;
 
-      // Calculate optimal grid layout
       const aspectRatio = viewportWidth / viewportHeight;
       const columnsBase = Math.sqrt(count * aspectRatio);
       const columns = Math.ceil(columnsBase);
       const rows = Math.ceil(count / columns);
 
-      // Get this element's index
       const index = Array.from(allWindows).indexOf(element);
 
-      // Calculate grid position
       const gridCol = index % columns;
       const gridRow = Math.floor(index / columns);
 
-      // Calculate cell dimensions with padding between cells
-      const padding = Math.min(viewportWidth, viewportHeight) * 0.05; // 5% of viewport
+      const padding = Math.min(viewportWidth, viewportHeight) * 0.05;
       const cellWidth = (viewportWidth - padding * (columns + 1)) / columns;
       const cellHeight = (viewportHeight - padding * (rows + 1)) / rows;
 
-      // Use the original (pre-transform) dimensions for scale calculations
       const origWidth = baseRect.width;
       const origHeight = baseRect.height;
 
-      // Determine scaling factor based on component size and available space
       const isSmall = origWidth < 200 || origHeight < 150;
       const isVeryLarge = origWidth > viewportWidth * 0.6 || origHeight > viewportHeight * 0.6;
 
-      // Calculate max scale that would fit in cell with padding
-      const maxWidthScale = (cellWidth / origWidth) * 0.85; // 85% of cell width
-      const maxHeightScale = (cellHeight / origHeight) * 0.85; // 85% of cell height
+      const maxWidthScale = (cellWidth / origWidth) * 0.85;
+      const maxHeightScale = (cellHeight / origHeight) * 0.85;
       let targetScale = Math.min(maxWidthScale, maxHeightScale);
 
-      // Adjust scale for edge cases
       if (isSmall && targetScale < 0.7) targetScale = Math.max(targetScale, 0.7);
       if (isVeryLarge) targetScale = Math.min(targetScale, 0.25);
 
-      // Calculate center positions — target cell center vs element's fixed base center
       const centerX = padding + gridCol * (cellWidth + padding) + cellWidth / 2;
       const centerY = padding + gridRow * (cellHeight + padding) + cellHeight / 2;
       const baseCenterX = baseRect.left + origWidth / 2;
       const baseCenterY = baseRect.top + origHeight / 2;
 
-      // Calculate transform values from the stable base position
       const translateX = Math.round(centerX - baseCenterX);
       const translateY = Math.round(centerY - baseCenterY);
       const scale = parseFloat(targetScale.toFixed(3));
@@ -202,16 +199,12 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
         zIndex: 100001,
       });
 
-      // Calculate border position for the portal
       const visualWidth = origWidth * scale;
       const visualHeight = origHeight * scale;
       const visualCenterX = baseCenterX + translateX;
       const visualCenterY = baseCenterY + translateY;
 
-      const borderOffset = Math.max(
-        4, // min offset
-        Math.min(12, 14 * (1 - scale)), // max offset
-      );
+      const borderOffset = Math.max(4, Math.min(12, 14 * (1 - scale)));
 
       const scaledVisualWidth = visualWidth * 0.97;
       const scaledVisualHeight = visualHeight * 0.97;
@@ -226,11 +219,8 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
       });
     };
 
-    // Run immediately once for initial positioning
     updatePosition();
 
-    // On resize: recalculate grid positions instantly (no CSS transition).
-    // Suppress transition → recalculate → debounce re-enable transition after resize ends.
     const handleResize = () => {
       setSuppressTransition(true);
 
@@ -239,7 +229,6 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
       }
       rafRef.current = requestAnimationFrame(updatePosition);
 
-      // Re-enable transition after resize settles
       if (resizeTimeoutRef.current) {
         clearTimeout(resizeTimeoutRef.current);
       }
@@ -261,7 +250,7 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
         resizeTimeoutRef.current = null;
       }
     };
-  }, [isActive, borderWidth, label]);
+  }, [isActive, isMobile, borderWidth, label]);
 
   const handleClick = useCallback(
     (e: React.MouseEvent) => {
@@ -270,13 +259,9 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
 
       const exposeId = componentId.current;
 
-      // Deactivate expose mode
       setActive(false);
-
-      // Set this component as highlighted
       setHighlightedComponent(exposeId);
 
-      // After DOM settles (portal removed, scroll restored), scroll the element into view
       requestAnimationFrame(() => {
         setTimeout(() => {
           const el = document.querySelector(`[data-expose-id="${exposeId}"]`);
@@ -308,22 +293,55 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
     if (isActive) setIsHovered(false);
   }, [isActive]);
 
-  // Build the transform string from numeric values (no regex parsing needed)
+  // ── Build computed style values ──
+
+  const isHighlighted = highlightedComponent === componentId.current;
+
+  // Mobile: no transform needed (CSS handles layout via scroll container)
+  // Desktop: translate + scale to grid cell
   const transformValue =
-    animationStyles && isActive
+    animationStyles && isActive && !isMobile
       ? `translate(${animationStyles.translateX}px, ${animationStyles.translateY}px) scale(${animationStyles.scale})`
       : "none";
 
-  // Build the transition — suppress during resize to prevent glitchy intermediate animation
   const transitionValue = suppressTransition
     ? "none"
     : `transform var(--expose-transition-duration) var(--expose-transition-easing), opacity var(--expose-transition-duration) ease, box-shadow 0.3s ease, filter var(--expose-transition-duration) ease`;
 
-  // The window element (shared between normal and portaled rendering)
+  // ── Positioning styles ──
+
+  const getPositionStyles = (): React.CSSProperties => {
+    if (!isActive) {
+      return { width: "100%", height: "100%" };
+    }
+
+    // Mobile: relative positioning within scroll container (CSS handles dimensions)
+    if (isMobile) {
+      return {
+        background: "var(--expose-window-bg, #ffffff)",
+      };
+    }
+
+    // Desktop: fixed positioning at original location
+    if (lastRectRef.current) {
+      return {
+        position: "fixed" as const,
+        left: lastRectRef.current.left,
+        top: lastRectRef.current.top,
+        width: lastRectRef.current.width,
+        height: lastRectRef.current.height,
+      };
+    }
+
+    return { width: "100%", height: "100%" };
+  };
+
+  // ── Window element ──
+
   const windowElement = (
     <div
       ref={wrapperRef}
-      className={`expose-window ${isActive ? "expose-window-active" : ""} ${highlightedComponent === componentId.current ? "expose-window-highlighted" : ""} ${className}`}
+      className={`expose-window ${isActive ? "expose-window-active" : ""} ${isHighlighted ? "expose-window-highlighted" : ""} ${className}`}
       onClick={isActive ? handleClick : undefined}
       onKeyDown={isActive ? handleKeyDown : undefined}
       onMouseEnter={handleMouseEnter}
@@ -333,48 +351,57 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
       aria-label={isActive ? (label || "Exposed window") : undefined}
       style={{
         ...style,
-        ...(isActive && lastRectRef.current
-          ? {
-              // When portaled to body, use fixed positioning at original location
-              position: "fixed" as const,
-              left: lastRectRef.current.left,
-              top: lastRectRef.current.top,
-              width: lastRectRef.current.width,
-              height: lastRectRef.current.height,
-            }
-          : {
-              width: "100%",
-              height: "100%",
-            }),
+        ...getPositionStyles(),
         transition: transitionValue,
         transformOrigin: "center center",
         willChange:
-          isActive || highlightedComponent === componentId.current
-            ? "transform, opacity, filter"
-            : "auto",
+          isActive || isHighlighted ? "transform, opacity, filter" : "auto",
         zIndex:
           animationStyles && isActive
             ? animationStyles.zIndex
-            : highlightedComponent === componentId.current
+            : isHighlighted
               ? 1000
               : "auto",
         transform: transformValue,
         background: isActive ? "var(--expose-window-bg, #ffffff)" : "transparent",
         boxShadow: isActive
           ? undefined
-          : highlightedComponent === componentId.current
+          : isHighlighted
             ? "0 0 0 4px var(--expose-highlight-muted), 0 5px 20px rgba(0, 0, 0, 0.2)"
             : "none",
         pointerEvents: "auto",
-        filter: highlightedComponent === componentId.current ? "none" : "blur(0px)",
+        filter: isHighlighted ? "none" : "blur(0px)",
       }}
       data-expose-id={componentId.current}
       data-scale={animationStyles?.scale || 1}
-      data-highlighted={highlightedComponent === componentId.current ? "true" : "false"}
+      data-highlighted={isHighlighted ? "true" : "false"}
     >
       {children}
+
+      {/* Mobile: inline border overlay */}
+      {isActive && isMobile && (
+        <div className="expose-mobile-border" />
+      )}
+
+      {/* Mobile: inline label (always visible, no hover needed on touch) */}
+      {isActive && isMobile && label && (
+        <div className="expose-mobile-label">
+          {label}
+        </div>
+      )}
     </div>
   );
+
+  // ── Determine portal target ──
+  // Mobile: portal into the shared scroll container
+  // Desktop: portal directly to document.body
+  const getPortalTarget = () => {
+    if (isMobile && mobileScrollContainer) return mobileScrollContainer;
+    if (typeof document !== "undefined") return document.body;
+    return null;
+  };
+
+  const portalTarget = isActive ? getPortalTarget() : null;
 
   return (
     <>
@@ -383,7 +410,6 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
         style={{
           position: "relative",
           zIndex: isActive ? 100000 : "auto",
-          // When active, maintain original size as placeholder to prevent layout shift
           ...(isActive && placeholderSize
             ? {
                 width: placeholderSize.width,
@@ -392,12 +418,12 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
             : {}),
         }}
       >
-        {/* When active, portal the window to body so it escapes the blurred #__next */}
-        {isActive ? createPortal(windowElement, document.body) : windowElement}
+        {isActive && portalTarget ? createPortal(windowElement, portalTarget) : windowElement}
       </div>
 
-      {/* Border overlay via React Portal */}
+      {/* Desktop border overlay via React Portal (skipped on mobile — inline instead) */}
       {isActive &&
+        !isMobile &&
         borderPosition &&
         createPortal(
           <div

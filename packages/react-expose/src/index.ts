@@ -13,6 +13,7 @@ export {
   useExposeWindows,
   useHighlightedComponent,
   useIsExposeActive,
+  useIsMobile,
 } from "./store/exposeStore";
 
 // Export types

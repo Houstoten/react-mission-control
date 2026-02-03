@@ -31,6 +31,12 @@
   --expose-blur-amount: 10px;
   --expose-highlight-blur: 3px;
   --expose-label-blur: 3px;
+
+  /* Mobile layout */
+  --expose-mobile-card-height: 20vh;
+  --expose-mobile-card-width: 85vw;
+  --expose-mobile-card-gap: 12px;
+  --expose-mobile-card-radius: 12px;
 }
 
 @layer expose {
@@ -226,6 +232,137 @@
     .expose-backdrop {
       backdrop-filter: none !important;
       -webkit-backdrop-filter: none !important;
+    }
+  }
+
+  /* ── Mobile Safari-like tab switcher ── */
+
+  .expose-mobile-scroll-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    z-index: 100001;
+    scroll-snap-type: y mandatory;
+    padding: 56px 0 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .expose-mobile-scroll-container .expose-window {
+    position: relative !important;
+    width: var(--expose-mobile-card-width) !important;
+    height: var(--expose-mobile-card-height) !important;
+    margin-bottom: var(--expose-mobile-card-gap);
+    scroll-snap-align: start;
+    border-radius: var(--expose-mobile-card-radius);
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.18);
+    overflow: hidden;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+
+  /* Mobile label — always visible, bottom-left */
+  .expose-mobile-label {
+    position: absolute;
+    bottom: 8px;
+    left: 12px;
+    top: auto !important;
+    transform: none !important;
+    opacity: 1 !important;
+    color: var(--expose-label-color);
+    font-size: var(--expose-label-font-size);
+    font-weight: var(--expose-label-font-weight);
+    padding: var(--expose-label-padding);
+    font-family: var(--expose-label-font);
+    background-color: var(--expose-label-bg);
+    border-radius: 6px;
+    backdrop-filter: blur(var(--expose-label-blur));
+    -webkit-backdrop-filter: blur(var(--expose-label-blur));
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  /* Mobile border overlay — inline within each card */
+  .expose-mobile-border {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: solid transparent;
+    border-width: var(--expose-border-width);
+    border-radius: var(--expose-mobile-card-radius);
+    pointer-events: none;
+    z-index: 10;
+    box-sizing: border-box;
+    transition: border-color var(--expose-transition-duration) ease;
+  }
+
+  /* ── Mobile "Current View" card ── */
+
+  .expose-current-view-card {
+    position: relative;
+    width: var(--expose-mobile-card-width);
+    height: var(--expose-mobile-card-height);
+    margin-bottom: var(--expose-mobile-card-gap);
+    scroll-snap-align: start;
+    border-radius: var(--expose-mobile-card-radius);
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.18);
+    overflow: hidden;
+    flex-shrink: 0;
+    cursor: pointer;
+    background: #fff;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  .expose-current-view-card:active {
+    opacity: 0.85;
+  }
+
+  /* Screenshot thumbnail image — fills the card, object-fit covers */
+  .expose-current-view-img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center top;
+    pointer-events: none;
+    user-select: none;
+    display: block;
+  }
+
+  /* Placeholder shown while screenshot is loading */
+  .expose-current-view-placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+    background-size: 200% 200%;
+    animation: expose-shimmer 1.5s ease-in-out infinite;
+  }
+
+  @keyframes expose-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* Reduced motion for mobile */
+  @media (prefers-reduced-motion: reduce) {
+    .expose-mobile-scroll-container {
+      scroll-snap-type: none;
+      scroll-behavior: auto;
     }
   }
 

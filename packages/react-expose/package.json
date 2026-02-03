@@ -59,6 +59,7 @@
     "*.css"
   ],
   "dependencies": {
+    "html-to-image": "^1.11.13",
     "zustand": "^5.0.8"
   }
 }
