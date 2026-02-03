@@ -1,10 +1,10 @@
-const path = require('path');
+const path = require("node:path");
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  outputFileTracingRoot: path.join(__dirname, '../../'),
-  transpilePackages: ['react-mission-control'],
+  outputFileTracingRoot: path.join(__dirname, "../../"),
+  transpilePackages: ["react-mission-control"],
 };
 
 module.exports = nextConfig;

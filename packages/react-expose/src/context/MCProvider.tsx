@@ -1,7 +1,14 @@
 import type React from "react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useBodyScreenshot, useBodyScrollY, useBodyViewportHeight, useIsMCActive, useIsMobile, useMCActions } from "../store/mcStore";
+import {
+  useBodyScreenshot,
+  useBodyScrollY,
+  useBodyViewportHeight,
+  useIsMCActive,
+  useIsMobile,
+  useMCActions,
+} from "../store/mcStore";
 
 interface MCProviderProps {
   children: React.ReactNode;
@@ -81,7 +88,14 @@ export const MCProvider: React.FC<MCProviderProps> = ({
   const previousFocusRef = useRef<Element | null>(null);
   const isActive = useIsMCActive();
   const isMobile = useIsMobile();
-  const { activate, deactivate, setConfig, updateBorderWidthForScreen, setMobileScrollContainer, setBodyScreenshot } = useMCActions();
+  const {
+    activate,
+    deactivate,
+    setConfig,
+    updateBorderWidthForScreen,
+    setMobileScrollContainer,
+    setBodyScreenshot,
+  } = useMCActions();
 
   // Capture a screenshot of the page BEFORE activating mission control,
   // so the image shows the unblurred page content.
@@ -99,11 +113,12 @@ export const MCProvider: React.FC<MCProviderProps> = ({
           filter: (node: HTMLElement) => {
             if (!(node instanceof HTMLElement)) return true;
             const cls = node.className;
-            if (typeof cls === "string" && (
-              cls.includes("mc-backdrop") ||
-              cls.includes("mc-mobile-scroll-container") ||
-              cls.includes("mc-sr-only")
-            )) {
+            if (
+              typeof cls === "string" &&
+              (cls.includes("mc-backdrop") ||
+                cls.includes("mc-mobile-scroll-container") ||
+                cls.includes("mc-sr-only"))
+            ) {
               return false;
             }
             return true;
@@ -143,10 +158,10 @@ export const MCProvider: React.FC<MCProviderProps> = ({
   // Bridge blurAmount prop to CSS custom property
   useEffect(() => {
     if (blurAmount !== undefined) {
-      document.documentElement.style.setProperty('--mc-blur-amount', `${blurAmount}px`);
+      document.documentElement.style.setProperty("--mc-blur-amount", `${blurAmount}px`);
     }
     return () => {
-      document.documentElement.style.removeProperty('--mc-blur-amount');
+      document.documentElement.style.removeProperty("--mc-blur-amount");
     };
   }, [blurAmount]);
 
@@ -422,11 +437,13 @@ export const MCProvider: React.FC<MCProviderProps> = ({
       {isActive &&
         isMobile &&
         createPortal(
-          <div
-            ref={mobileScrollRef}
-            className="mc-mobile-scroll-container"
-          >
-            <CurrentViewCard screenshot={bodyScreenshot} scrollY={bodyScrollY} viewportHeight={bodyViewportHeight} onClose={deactivate} />
+          <div ref={mobileScrollRef} className="mc-mobile-scroll-container">
+            <CurrentViewCard
+              screenshot={bodyScreenshot}
+              scrollY={bodyScrollY}
+              viewportHeight={bodyViewportHeight}
+              onClose={deactivate}
+            />
           </div>,
           document.body,
         )}

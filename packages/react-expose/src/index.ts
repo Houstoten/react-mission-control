@@ -1,35 +1,36 @@
 // Export components (new names)
-export { MCWrapper, ExposeWrapper } from "./components/MCWrapper";
-export { MCProvider, ExposeProvider } from "./context/MCProvider";
-export { MCTrigger, ExposeTrigger } from "./components/MCTrigger";
+
+export { ExposeTrigger, MCTrigger } from "./components/MCTrigger";
+export { ExposeWrapper, MCWrapper } from "./components/MCWrapper";
+export { ExposeProvider, MCProvider } from "./context/MCProvider";
 
 // Export hooks from Zustand store (new names with legacy aliases)
 export {
-  mcActions,
   exposeActions,
-  useMCActions,
+  mcActions,
   useExposeActions,
-  useMCBorderWidth,
   useExposeBorderWidth,
-  useMCStore,
   useExposeStore,
-  useMCStore as useMC,
   useExposeStore as useExpose,
-  useMCWindows,
   useExposeWindows,
   useHighlightedComponent,
-  useIsMCActive,
   useIsExposeActive,
+  useIsMCActive,
   useIsMobile,
+  useMCActions,
+  useMCBorderWidth,
+  useMCStore,
+  useMCStore as useMC,
+  useMCWindows,
 } from "./store/mcStore";
 
 // Export types (new names with legacy aliases)
 export type {
   AnimationStyles,
-  MCProviderProps,
-  MCWrapperProps,
   ExposeProviderProps,
   ExposeWrapperProps,
+  MCProviderProps,
+  MCWrapperProps,
 } from "./types";
 
 // Import styles

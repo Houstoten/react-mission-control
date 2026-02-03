@@ -1,6 +1,6 @@
 import type React from "react";
 import { useCallback } from "react";
-import { useMCActions, useIsMCActive } from "../store/mcStore";
+import { useIsMCActive, useMCActions } from "../store/mcStore";
 
 interface MCTriggerProps {
   children?: React.ReactNode;

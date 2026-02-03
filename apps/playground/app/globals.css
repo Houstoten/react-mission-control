@@ -44,15 +44,37 @@
 /* ── Hotkey press animation ── */
 
 @keyframes key-press-1 {
-  0%, 8.5% { transform: translateY(0); box-shadow: 0 2px 0 0 #c0c0c0; }
-  4.3% { transform: translateY(3px); box-shadow: 0 0 0 0 #c0c0c0; }
-  20%, 100% { transform: translateY(0); box-shadow: 0 2px 0 0 #c0c0c0; }
+  0%,
+  8.5% {
+    transform: translateY(0);
+    box-shadow: 0 2px 0 0 #c0c0c0;
+  }
+  4.3% {
+    transform: translateY(3px);
+    box-shadow: 0 0 0 0 #c0c0c0;
+  }
+  20%,
+  100% {
+    transform: translateY(0);
+    box-shadow: 0 2px 0 0 #c0c0c0;
+  }
 }
 
 @keyframes key-press-2 {
-  0%, 11.4% { transform: translateY(0); box-shadow: 0 2px 0 0 #c0c0c0; }
-  15.7% { transform: translateY(3px); box-shadow: 0 0 0 0 #c0c0c0; }
-  20%, 100% { transform: translateY(0); box-shadow: 0 2px 0 0 #c0c0c0; }
+  0%,
+  11.4% {
+    transform: translateY(0);
+    box-shadow: 0 2px 0 0 #c0c0c0;
+  }
+  15.7% {
+    transform: translateY(3px);
+    box-shadow: 0 0 0 0 #c0c0c0;
+  }
+  20%,
+  100% {
+    transform: translateY(0);
+    box-shadow: 0 2px 0 0 #c0c0c0;
+  }
 }
 
 .key-1 {

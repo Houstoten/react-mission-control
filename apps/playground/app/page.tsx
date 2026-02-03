@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { MCProvider, MCTrigger, MCWrapper } from "react-mission-control"
+import { MCProvider, MCTrigger, MCWrapper } from "react-mission-control";
 
 export default function Home() {
   return (
@@ -8,12 +8,8 @@ export default function Home() {
       <main className="min-h-screen bg-surface text-ink">
         {/* ── Hero ── */}
         <section className="h-screen flex flex-col items-center justify-center px-grid-4">
-          <h1 className="text-display text-ink mb-grid-3">
-            react-mission-control
-          </h1>
-          <p className="text-body text-muted mb-grid-6">
-            mission control for react
-          </p>
+          <h1 className="text-display text-ink mb-grid-3">react-mission-control</h1>
+          <p className="text-body text-muted mb-grid-6">mission control for react</p>
 
           {/* Animated hotkey hint */}
           <div className="flex items-center gap-grid-2">
@@ -148,9 +144,8 @@ export default function Home() {
           <MCWrapper label="navigate" style={{ height: "100%" }}>
             <Card number="04" title="navigate">
               <p className="mt-grid-3 text-body text-ink leading-relaxed">
-                all wrapped components zoom out into a grid.
-                click any component to focus it.
-                press escape to return.
+                all wrapped components zoom out into a grid. click any component to focus it. press
+                escape to return.
               </p>
               <p className="mt-grid-2 text-caption text-muted">
                 mission control for your interface.
@@ -237,7 +232,7 @@ export default function Home() {
         </footer>
       </main>
     </MCProvider>
-  )
+  );
 }
 
 function Card({
@@ -245,9 +240,9 @@ function Card({
   title,
   children,
 }: {
-  number: string
-  title: string
-  children: React.ReactNode
+  number: string;
+  title: string;
+  children: React.ReactNode;
 }) {
   return (
     <div className="bg-white p-grid-5 h-full min-h-[320px] flex flex-col">
@@ -255,11 +250,9 @@ function Card({
         <span className="text-caption text-muted font-mono">{number}</span>
         <h2 className="text-heading text-ink">{title}</h2>
       </div>
-      <div className="flex-1 flex flex-col justify-center">
-        {children}
-      </div>
+      <div className="flex-1 flex flex-col justify-center">{children}</div>
     </div>
-  )
+  );
 }
 
 function Arrow() {
@@ -279,5 +272,5 @@ function Arrow() {
         strokeLinecap="square"
       />
     </svg>
-  )
+  );
 }

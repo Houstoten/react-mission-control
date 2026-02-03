@@ -2,11 +2,11 @@ import type React from "react";
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
-  useMCActions,
-  useMCBorderWidth,
   useHighlightedComponent,
   useIsMCActive,
   useIsMobile,
+  useMCActions,
+  useMCBorderWidth,
   useMobileScrollContainer,
 } from "../store/mcStore";
 import type { AnimationStyles, MCWrapperProps } from "../types";
@@ -58,8 +58,7 @@ export const MCWrapper: React.FC<MCWrapperProps> = ({
   const mobileScrollContainer = useMobileScrollContainer();
   const borderWidth = useMCBorderWidth();
   const highlightedComponent = useHighlightedComponent();
-  const { registerWindow, unregisterWindow, setHighlightedComponent, setActive } =
-    useMCActions();
+  const { registerWindow, unregisterWindow, setHighlightedComponent, setActive } = useMCActions();
 
   // Register/unregister this window with the context
   useEffect(() => {
@@ -348,20 +347,15 @@ export const MCWrapper: React.FC<MCWrapperProps> = ({
       onMouseLeave={handleMouseLeave}
       role={isActive ? "button" : undefined}
       tabIndex={isActive ? 0 : undefined}
-      aria-label={isActive ? (label || "Window") : undefined}
+      aria-label={isActive ? label || "Window" : undefined}
       style={{
         ...style,
         ...getPositionStyles(),
         transition: transitionValue,
         transformOrigin: "center center",
-        willChange:
-          isActive || isHighlighted ? "transform, opacity, filter" : "auto",
+        willChange: isActive || isHighlighted ? "transform, opacity, filter" : "auto",
         zIndex:
-          animationStyles && isActive
-            ? animationStyles.zIndex
-            : isHighlighted
-              ? 1000
-              : "auto",
+          animationStyles && isActive ? animationStyles.zIndex : isHighlighted ? 1000 : "auto",
         transform: transformValue,
         background: isActive ? "var(--mc-window-bg, #ffffff)" : "transparent",
         boxShadow: isActive
@@ -379,16 +373,10 @@ export const MCWrapper: React.FC<MCWrapperProps> = ({
       {children}
 
       {/* Mobile: inline border overlay */}
-      {isActive && isMobile && (
-        <div className="mc-mobile-border" />
-      )}
+      {isActive && isMobile && <div className="mc-mobile-border" />}
 
       {/* Mobile: inline label (always visible, no hover needed on touch) */}
-      {isActive && isMobile && label && (
-        <div className="mc-mobile-label">
-          {label}
-        </div>
-      )}
+      {isActive && isMobile && label && <div className="mc-mobile-label">{label}</div>}
     </div>
   );
 
