@@ -17,7 +17,10 @@
     "format:check": "biome format .",
     "clean": "turbo run clean && rm -rf node_modules .turbo",
     "test": "turbo run test",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "turbo run build --filter=react-mission-control && changeset publish"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.2.3",
