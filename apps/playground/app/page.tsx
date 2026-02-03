@@ -12,14 +12,22 @@ export default function Home() {
           <p className="text-body text-muted mb-grid-6">mission control for react</p>
 
           {/* Animated hotkey hint */}
-          <div className="flex items-center gap-grid-2">
-            <span className="text-caption text-muted mr-grid-1">press</span>
-            <kbd className="key-1 inline-flex items-center justify-center w-[40px] h-[36px] border border-border bg-white text-caption text-ink select-none">
-              <Arrow />
-            </kbd>
-            <kbd className="key-2 inline-flex items-center justify-center w-[40px] h-[36px] border border-border bg-white text-caption text-ink select-none">
-              <Arrow />
-            </kbd>
+          <div className="flex flex-col md:flex-row items-center gap-grid-3 md:gap-grid-2">
+            <div className="flex items-center gap-grid-2">
+              <span className="text-caption text-muted mr-grid-1">press</span>
+              <kbd className="key-1 inline-flex items-center justify-center w-[40px] h-[36px] border border-border bg-white text-caption text-ink select-none">
+                <Arrow />
+              </kbd>
+              <kbd className="key-2 inline-flex items-center justify-center w-[40px] h-[36px] border border-border bg-white text-caption text-ink select-none">
+                <Arrow />
+              </kbd>
+            </div>
+            <div className="flex items-center gap-grid-2">
+              <span className="text-caption text-muted">or</span>
+              <MCTrigger className="px-grid-3 py-2 border border-border bg-white text-caption text-ink hover:bg-ink hover:text-white transition-colors">
+                click here
+              </MCTrigger>
+            </div>
           </div>
         </section>
 
