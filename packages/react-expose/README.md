@@ -2,8 +2,8 @@
 
 A React library that provides macOS Mission Control / Exposé-like window management for web applications. Activate it to see all your components in a grid view, then click to navigate.
 
-![npm version](https://img.shields.io/npm/v/react-mission-control)
-![license](https://img.shields.io/npm/l/react-mission-control)
+[![npm version](https://badgen.net/npm/v/react-mission-control)](https://www.npmjs.com/package/react-mission-control)
+[![license](https://badgen.net/npm/license/react-mission-control)](https://github.com/Houstoten/react-mission-control/blob/main/packages/react-expose/LICENSE)
 
 ## Features
 
