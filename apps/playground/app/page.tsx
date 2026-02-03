@@ -1,15 +1,15 @@
 "use client"
 
-import { ExposeProvider, ExposeTrigger, ExposeWrapper } from "react-expose"
+import { MCProvider, MCTrigger, MCWrapper } from "react-mission-control"
 
 export default function Home() {
   return (
-    <ExposeProvider shortcut="ArrowUp+ArrowUp">
+    <MCProvider shortcut="ArrowUp+ArrowUp">
       <main className="min-h-screen bg-surface text-ink">
         {/* ── Hero ── */}
         <section className="h-screen flex flex-col items-center justify-center px-grid-4">
           <h1 className="text-display text-ink mb-grid-3">
-            react-expose
+            react-mission-control
           </h1>
           <p className="text-body text-muted mb-grid-6">
             mission control for react
@@ -29,7 +29,7 @@ export default function Home() {
 
         {/* ── Cards Grid ── */}
         <section className="bg-border grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[1px]">
-          <ExposeWrapper label="install" style={{ height: "100%" }}>
+          <MCWrapper label="install" style={{ height: "100%" }}>
             <Card number="01" title="install">
               <pre className="mt-grid-3 bg-white border border-border">
                 <code>
@@ -38,7 +38,7 @@ export default function Home() {
                   </div>
                   <div className="code-line">
                     <span className="code-keyword">npm</span>{" "}
-                    <span className="code-string">install react-expose</span>
+                    <span className="code-string">install react-mission-control</span>
                   </div>
                   <div className="code-line">&nbsp;</div>
                   <div className="code-line">
@@ -46,35 +46,35 @@ export default function Home() {
                   </div>
                   <div className="code-line">
                     <span className="code-keyword">pnpm</span>{" "}
-                    <span className="code-string">add react-expose</span>
+                    <span className="code-string">add react-mission-control</span>
                   </div>
                 </code>
               </pre>
             </Card>
-          </ExposeWrapper>
+          </MCWrapper>
 
-          <ExposeWrapper label="wrap" style={{ height: "100%" }}>
+          <MCWrapper label="wrap" style={{ height: "100%" }}>
             <Card number="02" title="wrap">
               <pre className="mt-grid-3 bg-white border border-border">
                 <code>
                   <div className="code-line">
                     <span className="code-keyword">{"import"}</span>
-                    {" { ExposeProvider, ExposeWrapper }"}
+                    {" { MCProvider, MCWrapper }"}
                   </div>
                   <div className="code-line">
                     {"  "}
                     <span className="code-keyword">from</span>{" "}
-                    <span className="code-string">{'"react-expose"'}</span>
+                    <span className="code-string">{'"react-mission-control"'}</span>
                   </div>
                   <div className="code-line">&nbsp;</div>
                   <div className="code-line">
                     {"<"}
-                    <span className="code-keyword">ExposeProvider</span>
+                    <span className="code-keyword">MCProvider</span>
                     {">"}
                   </div>
                   <div className="code-line">
                     {"  <"}
-                    <span className="code-keyword">ExposeWrapper</span>
+                    <span className="code-keyword">MCWrapper</span>
                     {">"}
                   </div>
                   <div className="code-line">
@@ -84,20 +84,20 @@ export default function Home() {
                   </div>
                   <div className="code-line">
                     {"  </"}
-                    <span className="code-keyword">ExposeWrapper</span>
+                    <span className="code-keyword">MCWrapper</span>
                     {">"}
                   </div>
                   <div className="code-line">
                     {"</"}
-                    <span className="code-keyword">ExposeProvider</span>
+                    <span className="code-keyword">MCProvider</span>
                     {">"}
                   </div>
                 </code>
               </pre>
             </Card>
-          </ExposeWrapper>
+          </MCWrapper>
 
-          <ExposeWrapper label="activate" style={{ height: "100%" }}>
+          <MCWrapper label="activate" style={{ height: "100%" }}>
             <Card number="03" title="activate">
               <div className="mt-grid-3 flex items-center justify-center gap-grid-3">
                 <kbd className="inline-flex items-center justify-center w-[56px] h-[48px] border border-border bg-white text-body text-ink select-none shadow-[0_2px_0_0_#c0c0c0]">
@@ -111,9 +111,9 @@ export default function Home() {
 
               <div className="mt-grid-3 flex items-center justify-center gap-grid-2">
                 <span className="text-caption text-muted">or</span>
-                <ExposeTrigger className="px-grid-2 py-1 border border-border bg-white text-caption text-ink hover:bg-ink hover:text-white transition-colors">
+                <MCTrigger className="px-grid-2 py-1 border border-border bg-white text-caption text-ink hover:bg-ink hover:text-white transition-colors">
                   click to activate
-                </ExposeTrigger>
+                </MCTrigger>
               </div>
 
               <pre className="mt-grid-3 bg-white border border-border">
@@ -123,11 +123,11 @@ export default function Home() {
                   </div>
                   <div className="code-line">
                     {"<"}
-                    <span className="code-keyword">ExposeTrigger</span>
+                    <span className="code-keyword">MCTrigger</span>
                     {">"}
                     <span className="code-string">activate</span>
                     {"</"}
-                    <span className="code-keyword">ExposeTrigger</span>
+                    <span className="code-keyword">MCTrigger</span>
                     {">"}
                   </div>
                   <div className="code-line">&nbsp;</div>
@@ -137,15 +137,15 @@ export default function Home() {
                   <div className="code-line">
                     <span className="code-keyword">const</span>
                     {" { activate } = "}
-                    <span className="code-keyword">useExposeActions</span>
+                    <span className="code-keyword">useMCActions</span>
                     {"()"}
                   </div>
                 </code>
               </pre>
             </Card>
-          </ExposeWrapper>
+          </MCWrapper>
 
-          <ExposeWrapper label="navigate" style={{ height: "100%" }}>
+          <MCWrapper label="navigate" style={{ height: "100%" }}>
             <Card number="04" title="navigate">
               <p className="mt-grid-3 text-body text-ink leading-relaxed">
                 all wrapped components zoom out into a grid.
@@ -156,15 +156,15 @@ export default function Home() {
                 mission control for your interface.
               </p>
             </Card>
-          </ExposeWrapper>
+          </MCWrapper>
 
-          <ExposeWrapper label="configure" style={{ height: "100%" }}>
+          <MCWrapper label="configure" style={{ height: "100%" }}>
             <Card number="05" title="configure">
               <pre className="mt-grid-3 bg-white border border-border">
                 <code>
                   <div className="code-line">
                     {"<"}
-                    <span className="code-keyword">ExposeProvider</span>
+                    <span className="code-keyword">MCProvider</span>
                   </div>
                   <div className="code-line">
                     {"  shortcut="}
@@ -186,9 +186,9 @@ export default function Home() {
                 </code>
               </pre>
             </Card>
-          </ExposeWrapper>
+          </MCWrapper>
 
-          <ExposeWrapper label="customize" style={{ height: "100%" }}>
+          <MCWrapper label="customize" style={{ height: "100%" }}>
             <Card number="06" title="customize">
               <pre className="mt-grid-3 bg-white border border-border">
                 <code>
@@ -198,36 +198,36 @@ export default function Home() {
                   </div>
                   <div className="code-line">
                     {"  "}
-                    <span className="code-comment">--expose-highlight</span>
+                    <span className="code-comment">--mc-highlight</span>
                     {": rgba(64,156,255,0.85);"}
                   </div>
                   <div className="code-line">
                     {"  "}
-                    <span className="code-comment">--expose-backdrop-bg</span>
+                    <span className="code-comment">--mc-backdrop-bg</span>
                     {": rgba(0,0,0,0.3);"}
                   </div>
                   <div className="code-line">
                     {"  "}
-                    <span className="code-comment">--expose-transition-duration</span>
+                    <span className="code-comment">--mc-transition-duration</span>
                     {": 0.2s;"}
                   </div>
                   <div className="code-line">
                     {"  "}
-                    <span className="code-comment">--expose-border-radius</span>
+                    <span className="code-comment">--mc-border-radius</span>
                     {": 8px;"}
                   </div>
                   <div className="code-line">{"}"}</div>
                 </code>
               </pre>
             </Card>
-          </ExposeWrapper>
+          </MCWrapper>
         </section>
 
         {/* ── Footer ── */}
         <footer className="flex items-center justify-between px-grid-4 py-grid-3 border-t border-border text-caption text-muted">
-          <span>react-expose</span>
+          <span>react-mission-control</span>
           <a
-            href="https://github.com/ilyahuman/react-expose"
+            href="https://github.com/Houstoten/react-mission-control"
             target="_blank"
             rel="noopener noreferrer"
             className="text-ink hover:text-muted transition-colors"
@@ -236,7 +236,7 @@ export default function Home() {
           </a>
         </footer>
       </main>
-    </ExposeProvider>
+    </MCProvider>
   )
 }
 

@@ -1,9 +1,9 @@
 import type React from "react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useBodyScreenshot, useBodyScrollY, useBodyViewportHeight, useIsExposeActive, useIsMobile, useExposeActions } from "../store/exposeStore";
+import { useBodyScreenshot, useBodyScrollY, useBodyViewportHeight, useIsMCActive, useIsMobile, useMCActions } from "../store/mcStore";
 
-interface ExposeProviderProps {
+interface MCProviderProps {
   children: React.ReactNode;
   shortcut?: string;
   onActivate?: () => void;
@@ -15,7 +15,7 @@ interface ExposeProviderProps {
 /**
  * "Current View" card rendered as the first item in the mobile scroll container.
  * Displays a CSS-scaled snapshot of the page captured before activation.
- * Tapping it dismisses the exposé view.
+ * Tapping it dismisses the mission control view.
  */
 const CurrentViewCard: React.FC<{
   screenshot: string | null;
@@ -37,7 +37,7 @@ const CurrentViewCard: React.FC<{
   return (
     <div
       ref={cardRef}
-      className="expose-current-view-card"
+      className="mc-current-view-card"
       onClick={onClose}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -54,7 +54,7 @@ const CurrentViewCard: React.FC<{
           src={screenshot}
           alt=""
           aria-hidden="true"
-          className="expose-current-view-img"
+          className="mc-current-view-img"
           style={{
             width: "100%",
             transformOrigin: "top",
@@ -62,14 +62,14 @@ const CurrentViewCard: React.FC<{
           }}
         />
       ) : (
-        <div className="expose-current-view-placeholder" />
+        <div className="mc-current-view-placeholder" />
       )}
-      <div className="expose-mobile-label">Current View</div>
+      <div className="mc-mobile-label">Current View</div>
     </div>
   );
 };
 
-export const ExposeProvider: React.FC<ExposeProviderProps> = ({
+export const MCProvider: React.FC<MCProviderProps> = ({
   children,
   shortcut = "ArrowUp+ArrowUp",
   onActivate,
@@ -79,11 +79,11 @@ export const ExposeProvider: React.FC<ExposeProviderProps> = ({
 }) => {
   const lastKeyPressRef = useRef<number>(0);
   const previousFocusRef = useRef<Element | null>(null);
-  const isActive = useIsExposeActive();
+  const isActive = useIsMCActive();
   const isMobile = useIsMobile();
-  const { activate, deactivate, setConfig, updateBorderWidthForScreen, setMobileScrollContainer, setBodyScreenshot } = useExposeActions();
+  const { activate, deactivate, setConfig, updateBorderWidthForScreen, setMobileScrollContainer, setBodyScreenshot } = useMCActions();
 
-  // Capture a screenshot of the page BEFORE activating expose,
+  // Capture a screenshot of the page BEFORE activating mission control,
   // so the image shows the unblurred page content.
   const handleActivate = useCallback(async () => {
     const mobile = typeof window !== "undefined" && window.innerWidth < 768;
@@ -100,9 +100,9 @@ export const ExposeProvider: React.FC<ExposeProviderProps> = ({
             if (!(node instanceof HTMLElement)) return true;
             const cls = node.className;
             if (typeof cls === "string" && (
-              cls.includes("expose-backdrop") ||
-              cls.includes("expose-mobile-scroll-container") ||
-              cls.includes("expose-sr-only")
+              cls.includes("mc-backdrop") ||
+              cls.includes("mc-mobile-scroll-container") ||
+              cls.includes("mc-sr-only")
             )) {
               return false;
             }
@@ -143,10 +143,10 @@ export const ExposeProvider: React.FC<ExposeProviderProps> = ({
   // Bridge blurAmount prop to CSS custom property
   useEffect(() => {
     if (blurAmount !== undefined) {
-      document.documentElement.style.setProperty('--expose-blur-amount', `${blurAmount}px`);
+      document.documentElement.style.setProperty('--mc-blur-amount', `${blurAmount}px`);
     }
     return () => {
-      document.documentElement.style.removeProperty('--expose-blur-amount');
+      document.documentElement.style.removeProperty('--mc-blur-amount');
     };
   }, [blurAmount]);
 
@@ -235,8 +235,8 @@ export const ExposeProvider: React.FC<ExposeProviderProps> = ({
   }, [isActive]);
 
   // Apply blur to the app content by blurring body's direct children
-  // (except expose windows and our own elements). Also disable pointer events
-  // on blurred content so only expose windows and backdrop are interactive.
+  // (except mc windows and our own elements). Also disable pointer events
+  // on blurred content so only mc windows and backdrop are interactive.
   useLayoutEffect(() => {
     if (!isActive) return undefined;
 
@@ -249,12 +249,12 @@ export const ExposeProvider: React.FC<ExposeProviderProps> = ({
 
     for (const child of document.body.children) {
       if (!(child instanceof HTMLElement)) continue;
-      // Skip expose windows (portaled), border containers, backdrop, and mobile scroll container
+      // Skip mc windows (portaled), border containers, backdrop, and mobile scroll container
       if (
-        child.classList.contains("expose-window") ||
-        child.classList.contains("expose-window-border-container") ||
-        child.classList.contains("expose-backdrop") ||
-        child.classList.contains("expose-mobile-scroll-container")
+        child.classList.contains("mc-window") ||
+        child.classList.contains("mc-window-border-container") ||
+        child.classList.contains("mc-backdrop") ||
+        child.classList.contains("mc-mobile-scroll-container")
       ) {
         continue;
       }
@@ -279,7 +279,7 @@ export const ExposeProvider: React.FC<ExposeProviderProps> = ({
     };
   }, [isActive, blurAmount]);
 
-  // Scroll locking when expose is active
+  // Scroll locking when mission control is active
   useLayoutEffect(() => {
     if (!isActive) {
       return undefined;
@@ -315,20 +315,20 @@ export const ExposeProvider: React.FC<ExposeProviderProps> = ({
       // Store currently focused element
       previousFocusRef.current = document.activeElement;
 
-      // Focus the first exposed window after layout settles
+      // Focus the first window after layout settles
       requestAnimationFrame(() => {
-        const firstWindow = document.querySelector(".expose-window-active") as HTMLElement;
+        const firstWindow = document.querySelector(".mc-window-active") as HTMLElement;
         if (firstWindow) {
           firstWindow.focus();
         }
       });
 
-      // Focus trap: constrain Tab/Shift+Tab to exposed windows only
+      // Focus trap: constrain Tab/Shift+Tab to windows only
       const handleFocusTrap = (e: KeyboardEvent) => {
         if (e.key !== "Tab") return;
 
         const focusableWindows = Array.from(
-          document.querySelectorAll<HTMLElement>(".expose-window-active[tabindex]"),
+          document.querySelectorAll<HTMLElement>(".mc-window-active[tabindex]"),
         );
         if (focusableWindows.length === 0) return;
 
@@ -361,16 +361,16 @@ export const ExposeProvider: React.FC<ExposeProviderProps> = ({
     return undefined;
   }, [isActive]);
 
-  // Dismiss expose when clicking anywhere outside an expose window.
+  // Dismiss mission control when clicking anywhere outside a window.
   // Uses a document-level capture listener for reliability regardless of z-index stacking.
   useEffect(() => {
     if (!isActive) return undefined;
 
     const handleDocumentClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      // If clicked on an expose window or the current view card, let their handler deal with it
-      if (target.closest(".expose-window") || target.closest(".expose-current-view-card")) return;
-      // Clicked outside any expose window — dismiss
+      // If clicked on a window or the current view card, let their handler deal with it
+      if (target.closest(".mc-window") || target.closest(".mc-current-view-card")) return;
+      // Clicked outside any window — dismiss
       deactivate();
     };
 
@@ -395,36 +395,36 @@ export const ExposeProvider: React.FC<ExposeProviderProps> = ({
       {children}
 
       {/* ARIA live region — always rendered, visually hidden */}
-      <div aria-live="polite" aria-atomic="true" className="expose-sr-only">
-        {isActive ? "Exposé view activated" : ""}
+      <div aria-live="polite" aria-atomic="true" className="mc-sr-only">
+        {isActive ? "Mission Control activated" : ""}
       </div>
 
       {/* Backdrop via React Portal — appended to body, paints above blurred app content */}
       {backdropMounted &&
         createPortal(
           <div
-            id="expose-backdrop-main"
-            className="expose-backdrop"
+            id="mc-backdrop-main"
+            className="mc-backdrop"
             role="dialog"
             aria-modal="true"
-            aria-label={ariaLabel || "Exposé view"}
+            aria-label={ariaLabel || "Mission Control view"}
             style={{
               opacity: backdropVisible ? 1 : 0,
-              transition: "opacity var(--expose-backdrop-duration) ease",
+              transition: "opacity var(--mc-backdrop-duration) ease",
             }}
           />,
           document.body,
         )}
 
-      {/* Mobile scroll container — ExposeWrapper cards portal into this.
+      {/* Mobile scroll container — MCWrapper cards portal into this.
           Includes a "Current View" card as the first item that shows a scaled
-          snapshot of the page and dismisses expose when tapped. */}
+          snapshot of the page and dismisses mission control when tapped. */}
       {isActive &&
         isMobile &&
         createPortal(
           <div
             ref={mobileScrollRef}
-            className="expose-mobile-scroll-container"
+            className="mc-mobile-scroll-container"
           >
             <CurrentViewCard screenshot={bodyScreenshot} scrollY={bodyScrollY} viewportHeight={bodyViewportHeight} onClose={deactivate} />
           </div>,
@@ -433,3 +433,6 @@ export const ExposeProvider: React.FC<ExposeProviderProps> = ({
     </>
   );
 };
+
+// Legacy alias for backward compatibility
+export const ExposeProvider = MCProvider;

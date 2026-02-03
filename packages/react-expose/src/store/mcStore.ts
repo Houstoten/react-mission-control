@@ -2,7 +2,7 @@ import type React from "react";
 import { create } from "zustand";
 import { devtools, subscribeWithSelector } from "zustand/middleware";
 
-interface ExposeState {
+interface MCState {
   // State
   isActive: boolean;
   isMobile: boolean;
@@ -39,7 +39,7 @@ interface ExposeState {
 
 // Create store with SSR support
 const createStore = () =>
-  create<ExposeState>()(
+  create<MCState>()(
     devtools(
       subscribeWithSelector((set, get) => ({
       // Initial state
@@ -129,42 +129,50 @@ const createStore = () =>
       },
     })),
     {
-      name: "expose-store",
+      name: "mc-store",
     },
   ),
 );
 
-export const useExposeStore = createStore();
+export const useMCStore = createStore();
 
 // Selector hooks for performance optimization
-export const useIsExposeActive = () => useExposeStore((state) => state.isActive);
-export const useExposeWindows = () => useExposeStore((state) => state.windows);
-export const useHighlightedComponent = () => useExposeStore((state) => state.highlightedComponent);
-export const useExposeBorderWidth = () => useExposeStore((state) => state.borderWidth);
-export const useIsMobile = () => useExposeStore((state) => state.isMobile);
-export const useBodyScreenshot = () => useExposeStore((state) => state.bodyScreenshot);
-export const useBodyScrollY = () => useExposeStore((state) => state.bodyScrollY);
-export const useBodyViewportHeight = () => useExposeStore((state) => state.bodyViewportHeight);
-export const useMobileScrollContainer = () => useExposeStore((state) => state.mobileScrollContainer);
+export const useIsMCActive = () => useMCStore((state) => state.isActive);
+export const useMCWindows = () => useMCStore((state) => state.windows);
+export const useHighlightedComponent = () => useMCStore((state) => state.highlightedComponent);
+export const useMCBorderWidth = () => useMCStore((state) => state.borderWidth);
+export const useIsMobile = () => useMCStore((state) => state.isMobile);
+export const useBodyScreenshot = () => useMCStore((state) => state.bodyScreenshot);
+export const useBodyScrollY = () => useMCStore((state) => state.bodyScrollY);
+export const useBodyViewportHeight = () => useMCStore((state) => state.bodyViewportHeight);
+export const useMobileScrollContainer = () => useMCStore((state) => state.mobileScrollContainer);
 
 // Get the store actions directly - these are stable
-export const exposeActions = {
-  activate: () => useExposeStore.getState().activate(),
-  deactivate: () => useExposeStore.getState().deactivate(),
-  setActive: (active: boolean) => useExposeStore.getState().setActive(active),
+export const mcActions = {
+  activate: () => useMCStore.getState().activate(),
+  deactivate: () => useMCStore.getState().deactivate(),
+  setActive: (active: boolean) => useMCStore.getState().setActive(active),
   setBodyScreenshot: (url: string | null, scrollY?: number, viewportHeight?: number) =>
-    useExposeStore.getState().setBodyScreenshot(url, scrollY, viewportHeight),
+    useMCStore.getState().setBodyScreenshot(url, scrollY, viewportHeight),
   registerWindow: (id: string, ref: React.RefObject<HTMLDivElement>) =>
-    useExposeStore.getState().registerWindow(id, ref),
-  unregisterWindow: (id: string) => useExposeStore.getState().unregisterWindow(id),
+    useMCStore.getState().registerWindow(id, ref),
+  unregisterWindow: (id: string) => useMCStore.getState().unregisterWindow(id),
   setHighlightedComponent: (id: string | null) =>
-    useExposeStore.getState().setHighlightedComponent(id),
-  setConfig: (config: Parameters<ExposeState['setConfig']>[0]) =>
-    useExposeStore.getState().setConfig(config),
-  updateBorderWidthForScreen: () => useExposeStore.getState().updateBorderWidthForScreen(),
+    useMCStore.getState().setHighlightedComponent(id),
+  setConfig: (config: Parameters<MCState['setConfig']>[0]) =>
+    useMCStore.getState().setConfig(config),
+  updateBorderWidthForScreen: () => useMCStore.getState().updateBorderWidthForScreen(),
   setMobileScrollContainer: (el: HTMLDivElement | null) =>
-    useExposeStore.getState().setMobileScrollContainer(el),
+    useMCStore.getState().setMobileScrollContainer(el),
 };
 
 // Actions hook that returns the stable actions object
-export const useExposeActions = () => exposeActions;
+export const useMCActions = () => mcActions;
+
+// Legacy aliases for backward compatibility
+export const useExposeStore = useMCStore;
+export const useIsExposeActive = useIsMCActive;
+export const useExposeWindows = useMCWindows;
+export const useExposeBorderWidth = useMCBorderWidth;
+export const exposeActions = mcActions;
+export const useExposeActions = useMCActions;

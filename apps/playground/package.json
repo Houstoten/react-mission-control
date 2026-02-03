@@ -1,5 +1,5 @@
 {
-  "name": "@react-expose/playground",
+  "name": "@react-mission-control/playground",
   "version": "0.0.0",
   "private": true,
   "scripts": {
@@ -18,7 +18,7 @@
     "next": "^15.5.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-expose": "workspace:*",
+    "react-mission-control": "workspace:*",
     "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {

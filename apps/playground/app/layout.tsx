@@ -8,7 +8,7 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: "react-expose",
+  title: "react-mission-control",
   description: "Mission Control for React",
 }
 

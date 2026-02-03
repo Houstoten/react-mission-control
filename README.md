@@ -1,165 +1,109 @@
-# React Expose
+# react-mission-control
 
-A macOS Mission Control and Exposé-like experience for React applications.
+[![npm version](https://img.shields.io/npm/v/react-mission-control.svg)](https://www.npmjs.com/package/react-mission-control)
+[![bundle size](https://img.shields.io/bundlephobia/minzip/react-mission-control)](https://bundlephobia.com/package/react-mission-control)
+[![license](https://img.shields.io/npm/l/react-mission-control.svg)](https://github.com/Houstoten/react-mission-control/blob/main/LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
 
-<div align="center">
-  <h3>Expose for your React app</h3>
-  <p>Press Ctrl+Up to see all your components, then click to select.</p>
-</div>
+macOS Mission Control-like experience for React applications.
 
-## 📦 Monorepo Structure
-
-This project uses a monorepo structure with pnpm workspaces:
-
-```
-react-expose/
-├── packages/
-│   └── react-expose/        # Main library package
-├── apps/
-│   └── playground/          # Demo application
-└── package.json            # Root workspace configuration
-```
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- Node.js >= 18.0.0
-- pnpm >= 8.0.0
-
-### Installation
+## Installation
 
 ```bash
-# Install pnpm if you haven't already
-npm install -g pnpm
-
-# Install dependencies
-pnpm install
-
-# Start development
-pnpm dev
+npm install react-mission-control
 ```
-
-This will start both the library (in watch mode) and the playground app.
-
-## 📚 Development
-
-### Available Scripts
 
 ```bash
-# Start everything in development mode
-pnpm dev
-
-# Build everything
-pnpm build
-
-# Run only the library in dev mode
-pnpm dev:lib
-
-# Run only the playground
-pnpm dev:playground
-
-# Type checking
-pnpm typecheck
-
-# Clean all build artifacts
-pnpm clean
+pnpm add react-mission-control
 ```
 
-### Working on the Library
+## Quick Start
 
-The library source code is in `packages/react-expose/`. It uses:
-- **tsup** for bundling
-- **TypeScript** for type safety
-- Outputs both CommonJS and ESM formats
-
-```bash
-cd packages/react-expose
-pnpm dev  # Start in watch mode
-pnpm build # Build for production
-```
-
-### Working on the Playground
-
-The playground is in `apps/playground/`. It uses:
-- **Vite** for fast development
-- **React 18**
-- Hot module replacement
-
-```bash
-cd apps/playground
-pnpm dev  # Start dev server
-pnpm build # Build for production
-```
-
-## 🏗️ Architecture
-
-### Technology Stack
-
-- **Build Tools**: Vite (playground), tsup (library)
-- **Package Manager**: pnpm with workspaces
-- **Language**: TypeScript
-- **Framework**: React 18+
-- **Styling**: CSS modules
-
-### Project Organization
-
-- `packages/react-expose/` - Core library
-  - `src/components/` - React components
-  - `src/context/` - React context providers
-  - `src/hooks/` - Custom hooks
-  - `src/utils/` - Utility functions
-  - `src/types.ts` - TypeScript definitions
-
-- `apps/playground/` - Demo application
-  - Showcases library features
-  - Development testing ground
-  - Documentation examples
-
-## 📖 Library Usage
-
-### Installation (when published)
-
-```bash
-npm install react-expose
-# or
-pnpm add react-expose
-```
-
-### Basic Usage
-
-```jsx
-import { ExposeProvider, ExposeWrapper, ExposeTrigger } from 'react-expose';
+```tsx
+import { MCProvider, MCWrapper } from "react-mission-control";
+import "react-mission-control/css";
 
 function App() {
   return (
-    <ExposeProvider shortcut="Control+ArrowUp" blurAmount={10}>
-      <ExposeTrigger />
-      
-      <ExposeWrapper label="Dashboard">
-        <div>Your dashboard content</div>
-      </ExposeWrapper>
-      
-      <ExposeWrapper label="Settings">
-        <div>Your settings content</div>
-      </ExposeWrapper>
-    </ExposeProvider>
+    <MCProvider>
+      <MCWrapper label="Dashboard">
+        <Dashboard />
+      </MCWrapper>
+
+      <MCWrapper label="Settings">
+        <Settings />
+      </MCWrapper>
+    </MCProvider>
   );
 }
 ```
 
-## 🤝 Contributing
+Press `↑ ↑` (double tap Arrow Up) to activate. Press `Escape` to close.
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+## API
 
-## 📄 License
+### MCProvider
+
+Wrap your app with the provider to enable mission control functionality.
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `shortcut` | `string` | `"ArrowUp+ArrowUp"` | Activation shortcut |
+| `blurAmount` | `number` | `10` | Background blur in pixels |
+| `onActivate` | `() => void` | - | Called when activated |
+| `onDeactivate` | `() => void` | - | Called when deactivated |
+
+### MCWrapper
+
+Wrap components you want to include in mission control.
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `label` | `string` | - | Label shown on hover |
+| `id` | `string` | auto | Unique identifier |
+
+### MCTrigger
+
+Button component to activate programmatically.
+
+```tsx
+<MCTrigger className="btn">
+  Show All
+</MCTrigger>
+```
+
+### Hooks
+
+```tsx
+import { useMCActions, useIsMCActive } from "react-mission-control";
+
+const { activate, deactivate } = useMCActions();
+const isActive = useIsMCActive();
+```
+
+## Customization
+
+Override CSS variables to customize appearance:
+
+```css
+:root {
+  --mc-highlight: rgba(64, 156, 255, 0.85);
+  --mc-backdrop-bg: rgba(0, 0, 0, 0.3);
+  --mc-border-radius: 8px;
+  --mc-transition-duration: 0.2s;
+}
+```
+
+## Features
+
+- Keyboard shortcut activation (configurable)
+- Mobile support with Safari-like tab switcher
+- Accessible (ARIA labels, focus management, reduced motion)
+- SSR compatible (Next.js, Remix)
+- Customizable via CSS variables
+- TypeScript support
+- Zero config required
+
+## License
 
 MIT
-
----
-
-Built with ❤️ using modern React development practices.

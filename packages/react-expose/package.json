@@ -1,21 +1,26 @@
 {
-  "name": "react-expose",
+  "name": "react-mission-control",
   "version": "1.0.0",
+  "type": "module",
   "description": "macOS Mission Control and Exposé-like experiences for web applications",
-  "author": "",
+  "author": "Ivan Husarov",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/react-expose"
+    "url": "https://github.com/Houstoten/react-mission-control"
   },
-  "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
+  "homepage": "https://github.com/Houstoten/react-mission-control#readme",
+  "bugs": {
+    "url": "https://github.com/Houstoten/react-mission-control/issues"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "require": "./dist/index.cjs",
+      "import": "./dist/index.js"
     },
     "./styles.css": "./dist/styles.css",
     "./css": "./dist/index.css",

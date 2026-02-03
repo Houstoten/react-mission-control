@@ -2,45 +2,45 @@
    regardless of cascade layer ordering (e.g. Tailwind's @layer base). */
 :root {
   /* Colors */
-  --expose-highlight: rgba(64, 156, 255, 0.85);
-  --expose-highlight-muted: rgba(64, 156, 255, 0.7);
-  --expose-backdrop-bg: rgba(0, 0, 0, 0.3);
-  --expose-label-bg: rgba(0, 0, 0, 0.75);
-  --expose-label-color: white;
-  --expose-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-  --expose-click-overlay: rgba(0, 0, 0, 0.01);
+  --mc-highlight: rgba(64, 156, 255, 0.85);
+  --mc-highlight-muted: rgba(64, 156, 255, 0.7);
+  --mc-backdrop-bg: rgba(0, 0, 0, 0.3);
+  --mc-label-bg: rgba(0, 0, 0, 0.75);
+  --mc-label-color: white;
+  --mc-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  --mc-click-overlay: rgba(0, 0, 0, 0.01);
 
   /* Geometry */
-  --expose-border-radius: 8px;
-  --expose-border-width: 3px;
-  --expose-label-font-size: 12px;
-  --expose-label-padding: 4px 8px;
+  --mc-border-radius: 8px;
+  --mc-border-width: 3px;
+  --mc-label-font-size: 12px;
+  --mc-label-padding: 4px 8px;
 
   /* Typography */
-  --expose-label-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+  --mc-label-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     Oxygen, Ubuntu, Cantarell, sans-serif;
-  --expose-label-font-weight: bold;
+  --mc-label-font-weight: bold;
 
   /* Timing */
-  --expose-transition-duration: 0.2s;
-  --expose-transition-easing: cubic-bezier(0.16, 1, 0.3, 1);
-  --expose-backdrop-duration: 0.3s;
-  --expose-highlight-pulse-duration: 1.5s;
+  --mc-transition-duration: 0.2s;
+  --mc-transition-easing: cubic-bezier(0.16, 1, 0.3, 1);
+  --mc-backdrop-duration: 0.3s;
+  --mc-highlight-pulse-duration: 1.5s;
 
   /* Blur */
-  --expose-blur-amount: 10px;
-  --expose-highlight-blur: 3px;
-  --expose-label-blur: 3px;
+  --mc-blur-amount: 10px;
+  --mc-highlight-blur: 3px;
+  --mc-label-blur: 3px;
 
   /* Mobile layout */
-  --expose-mobile-card-height: 20vh;
-  --expose-mobile-card-width: 85vw;
-  --expose-mobile-card-gap: 12px;
-  --expose-mobile-card-radius: 12px;
+  --mc-mobile-card-height: 20vh;
+  --mc-mobile-card-width: 85vw;
+  --mc-mobile-card-gap: 12px;
+  --mc-mobile-card-radius: 12px;
 }
 
-@layer expose {
-  .expose-container {
+@layer mc {
+  .mc-container {
     position: relative;
     width: 100%;
     height: 100%;
@@ -48,88 +48,88 @@
     flex-direction: column;
   }
 
-  .expose-window {
+  .mc-window {
     position: relative;
     box-sizing: border-box;
     transform-origin: center center;
     transition:
-      transform 0.1s var(--expose-transition-easing),
+      transform 0.1s var(--mc-transition-easing),
       box-shadow 0.1s ease;
-    border-radius: var(--expose-border-radius);
+    border-radius: var(--mc-border-radius);
   }
 
   /* Highlighted window styling */
-  .expose-window-highlighted {
+  .mc-window-highlighted {
     box-shadow:
-      0 0 0 4px var(--expose-highlight-muted),
+      0 0 0 4px var(--mc-highlight-muted),
       0 5px 20px rgba(0, 0, 0, 0.2) !important;
     z-index: 100002 !important;
     position: relative;
     transform: scale(1.02) !important;
     transition:
-      transform var(--expose-transition-duration) ease,
-      box-shadow var(--expose-transition-duration) ease,
-      filter var(--expose-transition-duration) ease !important;
-    animation: highlight-pulse var(--expose-highlight-pulse-duration) ease-in-out infinite;
+      transform var(--mc-transition-duration) ease,
+      box-shadow var(--mc-transition-duration) ease,
+      filter var(--mc-transition-duration) ease !important;
+    animation: mc-highlight-pulse var(--mc-highlight-pulse-duration) ease-in-out infinite;
   }
 
   /* Apply blur to all components when any component is highlighted */
-  body:has(.expose-window-highlighted) .expose-window:not(.expose-window-highlighted) {
-    filter: blur(var(--expose-highlight-blur)) !important;
-    transition: filter var(--expose-transition-duration) ease;
+  body:has(.mc-window-highlighted) .mc-window:not(.mc-window-highlighted) {
+    filter: blur(var(--mc-highlight-blur)) !important;
+    transition: filter var(--mc-transition-duration) ease;
     opacity: 0.7;
   }
 
   /* The pulsing highlight effect on the highlighted component */
-  @keyframes highlight-pulse {
+  @keyframes mc-highlight-pulse {
     0%,
     100% {
       box-shadow:
-        0 0 0 4px var(--expose-highlight-muted),
+        0 0 0 4px var(--mc-highlight-muted),
         0 5px 20px rgba(0, 0, 0, 0.2);
     }
     50% {
       box-shadow:
-        0 0 0 6px var(--expose-highlight),
+        0 0 0 6px var(--mc-highlight),
         0 5px 25px rgba(0, 0, 0, 0.3);
     }
   }
 
   /* Special overlay for highlighted window */
-  .expose-window-highlighted::after {
+  .mc-window-highlighted::after {
     content: "";
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    border-radius: var(--expose-border-radius);
-    box-shadow: inset 0 0 20px color-mix(in srgb, var(--expose-highlight) 35%, transparent);
+    border-radius: var(--mc-border-radius);
+    box-shadow: inset 0 0 20px color-mix(in srgb, var(--mc-highlight) 35%, transparent);
     pointer-events: none;
     z-index: 50;
   }
 
-  /* Label displayed below exposed component when hovered */
-  .expose-window-label {
+  /* Label displayed below component when hovered */
+  .mc-window-label {
     position: absolute;
     top: calc(50% - 10px);
     left: 50%;
     transform: translateX(-50%);
     text-align: center;
-    color: var(--expose-label-color);
-    font-size: var(--expose-label-font-size);
-    font-weight: var(--expose-label-font-weight);
-    padding: var(--expose-label-padding);
-    font-family: var(--expose-label-font);
+    color: var(--mc-label-color);
+    font-size: var(--mc-label-font-size);
+    font-weight: var(--mc-label-font-weight);
+    padding: var(--mc-label-padding);
+    font-family: var(--mc-label-font);
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
     z-index: 100004;
     pointer-events: none;
-    background-color: var(--expose-label-bg);
+    background-color: var(--mc-label-bg);
     border-radius: 6px;
-    backdrop-filter: blur(var(--expose-label-blur));
-    -webkit-backdrop-filter: blur(var(--expose-label-blur));
+    backdrop-filter: blur(var(--mc-label-blur));
+    -webkit-backdrop-filter: blur(var(--mc-label-blur));
     opacity: 0;
-    transition: opacity var(--expose-transition-duration) ease;
+    transition: opacity var(--mc-transition-duration) ease;
     width: max-content;
     white-space: nowrap;
     overflow: visible;
@@ -139,18 +139,18 @@
     max-width: none;
   }
 
-  .expose-window-active {
-    box-shadow: var(--expose-shadow);
-    border-radius: var(--expose-border-radius);
+  .mc-window-active {
+    box-shadow: var(--mc-shadow);
+    border-radius: var(--mc-border-radius);
     overflow: hidden;
     cursor: pointer;
     transition:
-      transform var(--expose-transition-duration) var(--expose-transition-easing),
+      transform var(--mc-transition-duration) var(--mc-transition-easing),
       box-shadow 0.3s ease;
   }
 
   /* Overlay div to block click-through */
-  .expose-window-active::before {
+  .mc-window-active::before {
     content: "";
     position: absolute;
     top: 0;
@@ -159,16 +159,16 @@
     bottom: 0;
     z-index: 5;
     cursor: pointer;
-    background-color: var(--expose-click-overlay);
+    background-color: var(--mc-click-overlay);
   }
 
   /* Show label on hover */
-  .expose-window-active:hover .expose-window-label {
+  .mc-window-active:hover .mc-window-label {
     opacity: 1;
   }
 
   /* Container for border and label */
-  .expose-window-border-container {
+  .mc-window-border-container {
     position: fixed;
     pointer-events: none;
     z-index: 100002;
@@ -177,17 +177,17 @@
   }
 
   /* Border overlay that displays on hover */
-  .expose-window-border-overlay {
+  .mc-window-border-overlay {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
     border: solid transparent;
-    border-radius: calc(var(--expose-border-radius) + 2px);
+    border-radius: calc(var(--mc-border-radius) + 2px);
     pointer-events: none;
     transition:
-      border-color var(--expose-transition-duration) ease,
+      border-color var(--mc-transition-duration) ease,
       box-shadow 0.3s ease;
     will-change: border-color;
     box-sizing: border-box !important;
@@ -196,40 +196,40 @@
   }
 
   /* When hover class is added, show the border */
-  .expose-window-border-overlay.hover {
-    border-color: var(--expose-highlight);
+  .mc-window-border-overlay.hover {
+    border-color: var(--mc-highlight);
   }
 
-  /* Backdrop for exposé view */
-  .expose-backdrop {
+  /* Backdrop for mission control view */
+  .mc-backdrop {
     position: fixed !important;
     top: 0 !important;
     left: 0 !important;
     width: 100vw !important;
     height: 100vh !important;
-    background: var(--expose-backdrop-bg) !important;
+    background: var(--mc-backdrop-bg) !important;
     z-index: 100000 !important;
     pointer-events: auto !important;
   }
 
   /* Reduced motion support */
   @media (prefers-reduced-motion: reduce) {
-    .expose-window,
-    .expose-window-active,
-    .expose-window-highlighted,
-    .expose-window-border-overlay,
-    .expose-window-label,
-    .expose-backdrop {
+    .mc-window,
+    .mc-window-active,
+    .mc-window-highlighted,
+    .mc-window-border-overlay,
+    .mc-window-label,
+    .mc-backdrop {
       transition: none !important;
       animation: none !important;
     }
 
-    body:has(.expose-window-highlighted) .expose-window:not(.expose-window-highlighted) {
+    body:has(.mc-window-highlighted) .mc-window:not(.mc-window-highlighted) {
       filter: none !important;
     }
 
-    .expose-window-label,
-    .expose-backdrop {
+    .mc-window-label,
+    .mc-backdrop {
       backdrop-filter: none !important;
       -webkit-backdrop-filter: none !important;
     }
@@ -237,7 +237,7 @@
 
   /* ── Mobile Safari-like tab switcher ── */
 
-  .expose-mobile-scroll-container {
+  .mc-mobile-scroll-container {
     position: fixed;
     top: 0;
     left: 0;
@@ -254,13 +254,13 @@
     align-items: center;
   }
 
-  .expose-mobile-scroll-container .expose-window {
+  .mc-mobile-scroll-container .mc-window {
     position: relative !important;
-    width: var(--expose-mobile-card-width) !important;
-    height: var(--expose-mobile-card-height) !important;
-    margin-bottom: var(--expose-mobile-card-gap);
+    width: var(--mc-mobile-card-width) !important;
+    height: var(--mc-mobile-card-height) !important;
+    margin-bottom: var(--mc-mobile-card-gap);
     scroll-snap-align: start;
-    border-radius: var(--expose-mobile-card-radius);
+    border-radius: var(--mc-mobile-card-radius);
     box-shadow: 0 2px 16px rgba(0, 0, 0, 0.18);
     overflow: hidden;
     flex-shrink: 0;
@@ -268,52 +268,52 @@
   }
 
   /* Mobile label — always visible, bottom-left */
-  .expose-mobile-label {
+  .mc-mobile-label {
     position: absolute;
     bottom: 8px;
     left: 12px;
     top: auto !important;
     transform: none !important;
     opacity: 1 !important;
-    color: var(--expose-label-color);
-    font-size: var(--expose-label-font-size);
-    font-weight: var(--expose-label-font-weight);
-    padding: var(--expose-label-padding);
-    font-family: var(--expose-label-font);
-    background-color: var(--expose-label-bg);
+    color: var(--mc-label-color);
+    font-size: var(--mc-label-font-size);
+    font-weight: var(--mc-label-font-weight);
+    padding: var(--mc-label-padding);
+    font-family: var(--mc-label-font);
+    background-color: var(--mc-label-bg);
     border-radius: 6px;
-    backdrop-filter: blur(var(--expose-label-blur));
-    -webkit-backdrop-filter: blur(var(--expose-label-blur));
+    backdrop-filter: blur(var(--mc-label-blur));
+    -webkit-backdrop-filter: blur(var(--mc-label-blur));
     white-space: nowrap;
     pointer-events: none;
     z-index: 10;
   }
 
   /* Mobile border overlay — inline within each card */
-  .expose-mobile-border {
+  .mc-mobile-border {
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
     border: solid transparent;
-    border-width: var(--expose-border-width);
-    border-radius: var(--expose-mobile-card-radius);
+    border-width: var(--mc-border-width);
+    border-radius: var(--mc-mobile-card-radius);
     pointer-events: none;
     z-index: 10;
     box-sizing: border-box;
-    transition: border-color var(--expose-transition-duration) ease;
+    transition: border-color var(--mc-transition-duration) ease;
   }
 
   /* ── Mobile "Current View" card ── */
 
-  .expose-current-view-card {
+  .mc-current-view-card {
     position: relative;
-    width: var(--expose-mobile-card-width);
-    height: var(--expose-mobile-card-height);
-    margin-bottom: var(--expose-mobile-card-gap);
+    width: var(--mc-mobile-card-width);
+    height: var(--mc-mobile-card-height);
+    margin-bottom: var(--mc-mobile-card-gap);
     scroll-snap-align: start;
-    border-radius: var(--expose-mobile-card-radius);
+    border-radius: var(--mc-mobile-card-radius);
     box-shadow: 0 2px 16px rgba(0, 0, 0, 0.18);
     overflow: hidden;
     flex-shrink: 0;
@@ -323,12 +323,12 @@
     touch-action: manipulation;
   }
 
-  .expose-current-view-card:active {
+  .mc-current-view-card:active {
     opacity: 0.85;
   }
 
   /* Screenshot thumbnail image — fills the card, object-fit covers */
-  .expose-current-view-img {
+  .mc-current-view-img {
     position: absolute;
     top: 0;
     left: 0;
@@ -342,7 +342,7 @@
   }
 
   /* Placeholder shown while screenshot is loading */
-  .expose-current-view-placeholder {
+  .mc-current-view-placeholder {
     position: absolute;
     top: 0;
     left: 0;
@@ -350,24 +350,24 @@
     height: 100%;
     background: linear-gradient(135deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
     background-size: 200% 200%;
-    animation: expose-shimmer 1.5s ease-in-out infinite;
+    animation: mc-shimmer 1.5s ease-in-out infinite;
   }
 
-  @keyframes expose-shimmer {
+  @keyframes mc-shimmer {
     0% { background-position: 200% 0; }
     100% { background-position: -200% 0; }
   }
 
   /* Reduced motion for mobile */
   @media (prefers-reduced-motion: reduce) {
-    .expose-mobile-scroll-container {
+    .mc-mobile-scroll-container {
       scroll-snap-type: none;
       scroll-behavior: auto;
     }
   }
 
   /* Visually hidden utility for screen readers */
-  .expose-sr-only {
+  .mc-sr-only {
     position: absolute;
     width: 1px;
     height: 1px;

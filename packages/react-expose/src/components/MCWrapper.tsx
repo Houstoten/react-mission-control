@@ -2,17 +2,17 @@ import type React from "react";
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
-  useExposeActions,
-  useExposeBorderWidth,
+  useMCActions,
+  useMCBorderWidth,
   useHighlightedComponent,
-  useIsExposeActive,
+  useIsMCActive,
   useIsMobile,
   useMobileScrollContainer,
-} from "../store/exposeStore";
-import type { AnimationStyles, ExposeWrapperProps } from "../types";
+} from "../store/mcStore";
+import type { AnimationStyles, MCWrapperProps } from "../types";
 import "./styles.css";
 
-export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
+export const MCWrapper: React.FC<MCWrapperProps> = ({
   children,
   id: propId,
   className = "",
@@ -21,7 +21,7 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
 }) => {
   // Use React's useId for SSR-safe ID generation
   const generatedId = useId();
-  const componentId = useRef(propId || `expose-${generatedId}`);
+  const componentId = useRef(propId || `mc-${generatedId}`);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
   const resizeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -53,15 +53,15 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
   } | null>(null);
 
   // Use Zustand hooks
-  const isActive = useIsExposeActive();
+  const isActive = useIsMCActive();
   const isMobile = useIsMobile();
   const mobileScrollContainer = useMobileScrollContainer();
-  const borderWidth = useExposeBorderWidth();
+  const borderWidth = useMCBorderWidth();
   const highlightedComponent = useHighlightedComponent();
   const { registerWindow, unregisterWindow, setHighlightedComponent, setActive } =
-    useExposeActions();
+    useMCActions();
 
-  // Register/unregister this window with the Expose context
+  // Register/unregister this window with the context
   useEffect(() => {
     registerWindow(componentId.current, wrapperRef);
 
@@ -77,7 +77,7 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
   }, [registerWindow, unregisterWindow]);
 
   // Track the element's rect when not active
-  // so we know where to position the portal when expose activates
+  // so we know where to position the portal when mission control activates
   useLayoutEffect(() => {
     if (!isActive && wrapperRef.current) {
       const rect = wrapperRef.current.getBoundingClientRect();
@@ -106,7 +106,7 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
     return undefined;
   }, [highlightedComponent, setHighlightedComponent]);
 
-  // Reset hover state when expose deactivates
+  // Reset hover state when mission control deactivates
   useEffect(() => {
     if (!isActive) {
       setIsHovered(false);
@@ -153,7 +153,7 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
 
-      const allWindows = document.querySelectorAll(".expose-window");
+      const allWindows = document.querySelectorAll(".mc-window");
       const count = allWindows.length;
 
       const aspectRatio = viewportWidth / viewportHeight;
@@ -257,14 +257,14 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
       if (!isActive) return;
       e.stopPropagation();
 
-      const exposeId = componentId.current;
+      const mcId = componentId.current;
 
       setActive(false);
-      setHighlightedComponent(exposeId);
+      setHighlightedComponent(mcId);
 
       requestAnimationFrame(() => {
         setTimeout(() => {
-          const el = document.querySelector(`[data-expose-id="${exposeId}"]`);
+          const el = document.querySelector(`[data-mc-id="${mcId}"]`);
           if (el) {
             el.scrollIntoView({ behavior: "smooth", block: "center" });
           }
@@ -306,7 +306,7 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
 
   const transitionValue = suppressTransition
     ? "none"
-    : `transform var(--expose-transition-duration) var(--expose-transition-easing), opacity var(--expose-transition-duration) ease, box-shadow 0.3s ease, filter var(--expose-transition-duration) ease`;
+    : `transform var(--mc-transition-duration) var(--mc-transition-easing), opacity var(--mc-transition-duration) ease, box-shadow 0.3s ease, filter var(--mc-transition-duration) ease`;
 
   // ── Positioning styles ──
 
@@ -318,7 +318,7 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
     // Mobile: relative positioning within scroll container (CSS handles dimensions)
     if (isMobile) {
       return {
-        background: "var(--expose-window-bg, #ffffff)",
+        background: "var(--mc-window-bg, #ffffff)",
       };
     }
 
@@ -341,14 +341,14 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
   const windowElement = (
     <div
       ref={wrapperRef}
-      className={`expose-window ${isActive ? "expose-window-active" : ""} ${isHighlighted ? "expose-window-highlighted" : ""} ${className}`}
+      className={`mc-window ${isActive ? "mc-window-active" : ""} ${isHighlighted ? "mc-window-highlighted" : ""} ${className}`}
       onClick={isActive ? handleClick : undefined}
       onKeyDown={isActive ? handleKeyDown : undefined}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       role={isActive ? "button" : undefined}
       tabIndex={isActive ? 0 : undefined}
-      aria-label={isActive ? (label || "Exposed window") : undefined}
+      aria-label={isActive ? (label || "Window") : undefined}
       style={{
         ...style,
         ...getPositionStyles(),
@@ -363,16 +363,16 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
               ? 1000
               : "auto",
         transform: transformValue,
-        background: isActive ? "var(--expose-window-bg, #ffffff)" : "transparent",
+        background: isActive ? "var(--mc-window-bg, #ffffff)" : "transparent",
         boxShadow: isActive
           ? undefined
           : isHighlighted
-            ? "0 0 0 4px var(--expose-highlight-muted), 0 5px 20px rgba(0, 0, 0, 0.2)"
+            ? "0 0 0 4px var(--mc-highlight-muted), 0 5px 20px rgba(0, 0, 0, 0.2)"
             : "none",
         pointerEvents: "auto",
         filter: isHighlighted ? "none" : "blur(0px)",
       }}
-      data-expose-id={componentId.current}
+      data-mc-id={componentId.current}
       data-scale={animationStyles?.scale || 1}
       data-highlighted={isHighlighted ? "true" : "false"}
     >
@@ -380,12 +380,12 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
 
       {/* Mobile: inline border overlay */}
       {isActive && isMobile && (
-        <div className="expose-mobile-border" />
+        <div className="mc-mobile-border" />
       )}
 
       {/* Mobile: inline label (always visible, no hover needed on touch) */}
       {isActive && isMobile && label && (
-        <div className="expose-mobile-label">
+        <div className="mc-mobile-label">
           {label}
         </div>
       )}
@@ -406,7 +406,7 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
   return (
     <>
       <div
-        className="expose-container"
+        className="mc-container"
         style={{
           position: "relative",
           zIndex: isActive ? 100000 : "auto",
@@ -427,7 +427,7 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
         borderPosition &&
         createPortal(
           <div
-            className="expose-window-border-container"
+            className="mc-window-border-container"
             style={{
               position: "fixed",
               pointerEvents: "none",
@@ -441,17 +441,17 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
             }}
           >
             <div
-              className={`expose-window-border-overlay ${isHovered ? "hover" : ""}`}
+              className={`mc-window-border-overlay ${isHovered ? "hover" : ""}`}
               style={{
                 borderWidth: `${borderWidth}px`,
                 borderStyle: "solid",
-                borderColor: isHovered ? "var(--expose-highlight)" : "transparent",
+                borderColor: isHovered ? "var(--mc-highlight)" : "transparent",
                 borderRadius: "6px",
               }}
             />
             {label && (
               <div
-                className="expose-window-label"
+                className="mc-window-label"
                 style={{
                   opacity: isHovered ? 1 : 0,
                   position: "absolute",
@@ -465,14 +465,14 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  backgroundColor: "var(--expose-label-bg)",
-                  color: "var(--expose-label-color)",
-                  padding: "var(--expose-label-padding)",
+                  backgroundColor: "var(--mc-label-bg)",
+                  color: "var(--mc-label-color)",
+                  padding: "var(--mc-label-padding)",
                   borderRadius: "4px",
-                  fontSize: "var(--expose-label-font-size)",
-                  fontWeight: "var(--expose-label-font-weight)",
+                  fontSize: "var(--mc-label-font-size)",
+                  fontWeight: "var(--mc-label-font-weight)",
                   whiteSpace: "nowrap",
-                  transition: "opacity var(--expose-transition-duration) ease",
+                  transition: "opacity var(--mc-transition-duration) ease",
                   pointerEvents: "none",
                   zIndex: 100003,
                 }}
@@ -486,3 +486,6 @@ export const ExposeWrapper: React.FC<ExposeWrapperProps> = ({
     </>
   );
 };
+
+// Legacy alias for backward compatibility
+export const ExposeWrapper = MCWrapper;

@@ -1,6 +1,6 @@
 import type React from "react";
 
-export interface ExposeProviderProps {
+export interface MCProviderProps {
   children: React.ReactNode;
   shortcut?: string;
   onActivate?: () => void;
@@ -9,7 +9,7 @@ export interface ExposeProviderProps {
   ariaLabel?: string;
 }
 
-export interface ExposeWrapperProps {
+export interface MCWrapperProps {
   children: React.ReactNode;
   id?: string;
   className?: string;
@@ -23,3 +23,7 @@ export interface AnimationStyles {
   scale: number;
   zIndex: number;
 }
+
+// Legacy aliases for backward compatibility
+export type ExposeProviderProps = MCProviderProps;
+export type ExposeWrapperProps = MCWrapperProps;

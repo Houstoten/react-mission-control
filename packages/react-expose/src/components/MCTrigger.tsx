@@ -1,8 +1,8 @@
 import type React from "react";
 import { useCallback } from "react";
-import { useExposeActions, useIsExposeActive } from "../store/exposeStore";
+import { useMCActions, useIsMCActive } from "../store/mcStore";
 
-interface ExposeTriggerProps {
+interface MCTriggerProps {
   children?: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
@@ -17,15 +17,15 @@ interface ExposeTriggerProps {
   as?: React.ElementType;
 }
 
-export const ExposeTrigger: React.FC<ExposeTriggerProps> = ({
+export const MCTrigger: React.FC<MCTriggerProps> = ({
   children,
   className,
   style,
   render,
   as: Component = "button",
 }) => {
-  const isActive = useIsExposeActive();
-  const { activate, deactivate } = useExposeActions();
+  const isActive = useIsMCActive();
+  const { activate, deactivate } = useMCActions();
 
   const toggle = useCallback(() => {
     if (isActive) {
@@ -45,10 +45,13 @@ export const ExposeTrigger: React.FC<ExposeTriggerProps> = ({
       style={style}
       onClick={toggle}
       aria-pressed={isActive}
-      aria-label={isActive ? "Deactivate exposé view" : "Activate exposé view"}
+      aria-label={isActive ? "Deactivate Mission Control" : "Activate Mission Control"}
       type={Component === "button" ? "button" : undefined}
     >
       {children}
     </Component>
   );
 };
+
+// Legacy alias for backward compatibility
+export const ExposeTrigger = MCTrigger;

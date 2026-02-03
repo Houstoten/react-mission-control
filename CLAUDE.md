@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-React Expose is a library that provides macOS Mission Control and Exposé-like experiences for web applications. This is a monorepo using:
+React Mission Control is a library that provides macOS Mission Control-like experiences for web applications. This is a monorepo using:
 
 - **Turborepo** for build orchestration and caching
 - **pnpm workspaces** for dependency management
@@ -61,7 +61,7 @@ pnpm build:playground
 
 ### Monorepo Structure
 ```
-react-expose/
+react-mission-control/
 ├── packages/
 │   └── react-expose/        # Main library (tsdown build)
 ├── apps/
@@ -72,15 +72,15 @@ react-expose/
 
 ### Core Components
 
-- **ExposeProvider** (`packages/react-expose/src/context/ExposeContext.tsx`): Main context provider that manages expose state
-- **ExposeWrapper** (`packages/react-expose/src/components/ExposeWrapper.tsx`): Wrapper component for exposable elements
-- **ExposeTrigger** (`packages/react-expose/src/components/ExposeTrigger.tsx`): Handles keyboard shortcuts for activation
+- **MCProvider** (`packages/react-expose/src/context/MCProvider.tsx`): Main context provider that manages mission control state
+- **MCWrapper** (`packages/react-expose/src/components/MCWrapper.tsx`): Wrapper component for elements to include in mission control
+- **MCTrigger** (`packages/react-expose/src/components/MCTrigger.tsx`): Handles keyboard shortcuts for activation
 
 ### Key Patterns
 
-1. **Context-based State Management**: The library uses React Context (`ExposeContext`) to manage global expose state and window registration
-2. **Component Registration**: Each `ExposeWrapper` registers itself with the context using a unique ID
-3. **Animation System**: CSS transforms and transitions handle the zoom-out effect when expose is activated
+1. **Zustand State Management**: The library uses Zustand store to manage global state and window registration
+2. **Component Registration**: Each `MCWrapper` registers itself with the store using a unique ID
+3. **Animation System**: CSS transforms and transitions handle the zoom-out effect when mission control is activated
 4. **Monorepo with pnpm workspaces**: Enables efficient dependency management and cross-package development
 
 ### Build System
@@ -110,7 +110,7 @@ react-expose/
 
 ## Testing Changes
 
-The playground app automatically uses the local library version through pnpm workspace linking (`"react-expose": "workspace:*"`), so changes are reflected immediately during development.
+The playground app automatically uses the local library version through pnpm workspace linking (`"react-mission-control": "workspace:*"`), so changes are reflected immediately during development.
 
 ## Code Search Guidelines
 
@@ -128,8 +128,8 @@ When searching for code patterns, functions, or components in this repository:
 ```bash
 # Examples:
 sg --pattern 'const $NAME = $_' -l tsx  # Find const declarations
-sg --pattern '<ExposeWrapper $$$>' -l tsx  # Find ExposeWrapper usage
-sg --pattern 'import { $$ } from "react-expose"' -l tsx  # Find imports from library
+sg --pattern '<MCWrapper $$$>' -l tsx  # Find MCWrapper usage
+sg --pattern 'import { $$ } from "react-mission-control"' -l tsx  # Find imports from library
 ```
 
 **Avoid**: Basic grep/ripgrep for code structure searches (use only for simple text searches)
