@@ -1,6 +1,6 @@
 {
   "name": "react-mission-control",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "type": "module",
   "description": "macOS Mission Control-like experience for React applications",
   "publishConfig": {
@@ -26,11 +26,12 @@
       "import": "./dist/index.js"
     },
     "./styles.css": "./dist/styles.css",
-    "./css": "./dist/index.css",
-    "./dist/index.css": "./dist/index.css"
+    "./css": "./dist/styles.css"
   },
   "files": [
-    "dist"
+    "dist",
+    "!dist/*.map",
+    "!dist/index.css"
   ],
   "scripts": {
     "dev": "tsdown --watch",

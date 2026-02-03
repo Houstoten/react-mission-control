@@ -7,9 +7,9 @@ export default defineConfig({
   target: "es2020",
   dts: true,
   clean: true,
-  sourcemap: true,
+  sourcemap: false,
   external: ["react", "react-dom"],
-  minify: process.env.NODE_ENV === "production",
+  minify: true,
   treeshake: true,
   banner: {
     js: '"use client"',
@@ -21,27 +21,22 @@ export default defineConfig({
   outDir: "dist",
   // Copy CSS files to dist
   onSuccess: async () => {
-    const { cp, readdir, copyFile } = await import("node:fs/promises");
+    const { cp, readdir, copyFile, unlink } = await import("node:fs/promises");
     const { join } = await import("node:path");
     try {
       await cp("src/components/styles.css", "dist/styles.css");
     } catch (_error) {
       // File might not exist, that's okay
     }
-    // Copy hashed .d.ts/.d.mts to stable names for package.json "types" field
+    // Copy hashed .d.ts to stable names for package.json "types" field
     const files = await readdir("dist");
     for (const file of files) {
       if (/^index-.+\.d\.ts$/.test(file)) {
         await copyFile(join("dist", file), "dist/index.d.ts");
+        await unlink(join("dist", file)); // Remove hashed version
       }
-      if (/^index-.+\.d\.ts\.map$/.test(file)) {
-        await copyFile(join("dist", file), "dist/index.d.ts.map");
-      }
-      if (/^index-.+\.d\.mts$/.test(file)) {
-        await copyFile(join("dist", file), "dist/index.d.mts");
-      }
-      if (/^index-.+\.d\.mts\.map$/.test(file)) {
-        await copyFile(join("dist", file), "dist/index.d.mts.map");
+      if (/^index-.+\.d\.cts$/.test(file)) {
+        await unlink(join("dist", file)); // Remove duplicate CTS types
       }
     }
   },

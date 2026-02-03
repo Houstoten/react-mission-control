@@ -1,6 +1,6 @@
 {
   "name": "@react-mission-control/monorepo",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "React Mission Control - macOS Mission Control-like experiences for web applications",
   "scripts": {

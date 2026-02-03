@@ -1,4 +1,4 @@
-@import "react-mission-control/dist/index.css";
+@import "react-mission-control/styles.css";
 
 @tailwind base;
 @tailwind components;
